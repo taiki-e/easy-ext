@@ -4,6 +4,7 @@
 [![version](https://img.shields.io/crates/v/easy-ext.svg)](https://crates.io/crates/easy-ext/)
 [![documentation](https://docs.rs/easy-ext/badge.svg)](https://docs.rs/easy-ext/)
 [![license](https://img.shields.io/crates/l/easy-ext.svg)](https://crates.io/crates/easy-ext/)
+[![Rustc Version](https://img.shields.io/badge/rustc-1.31+-lightgray.svg)](https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html)
 
 An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
 
