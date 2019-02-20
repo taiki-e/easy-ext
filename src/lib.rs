@@ -9,6 +9,7 @@
 //! impl str {
 //!     fn foo(&self) -> String {
 //!         /* */
+//!         # unimplemented!()
 //!     }
 //! }
 //! ```
@@ -23,6 +24,7 @@
 //! impl StrExt for str {
 //!     fn foo(&self) -> String {
 //!         /* */
+//!         # unimplemented!()
 //!     }
 //! }
 //! ```
@@ -70,6 +72,7 @@ use syn::{
 /// impl str {
 ///     fn foo(&self) -> String {
 ///         /* */
+///         # unimplemented!()
 ///     }
 /// }
 /// ```
@@ -84,6 +87,7 @@ use syn::{
 /// impl StrExt for str {
 ///     fn foo(&self) -> String {
 ///         /* */
+///         # unimplemented!()
 ///     }
 /// }
 /// ```
