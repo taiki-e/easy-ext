@@ -29,7 +29,7 @@
 //! }
 //! ```
 //!
-//! ### Supported items in the original `impl`.
+//! ### Supported items
 //!
 //! * [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
 //!
@@ -41,7 +41,7 @@
 //!
 //! * The visibility of all the items in the original `impl` must be identical.
 //!
-//! See [the test codes](https://github.com/taiki-e/easy-ext/blob/master/tests/test.rs) for examples.
+//! See [the test codes](https://github.com/taiki-e/easy-ext/blob/master/tests/test.rs) for more examples.
 //!
 
 #![doc(html_root_url = "https://docs.rs/easy-ext/0.1.0")]
@@ -92,7 +92,7 @@ use syn::{
 /// }
 /// ```
 ///
-/// ### Supported items in the original `impl`.
+/// ### Supported items
 ///
 /// * [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
 ///
@@ -104,7 +104,7 @@ use syn::{
 ///
 /// * The visibility of all the items in the original `impl` must be identical.
 ///
-/// See [the test codes](https://github.com/taiki-e/easy-ext/blob/master/tests/test.rs) for examples.
+/// See [the test codes](https://github.com/taiki-e/easy-ext/blob/master/tests/test.rs) for more examples.
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut input_impl: ItemImpl = parse_macro_input!(input);

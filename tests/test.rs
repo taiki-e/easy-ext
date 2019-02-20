@@ -16,9 +16,9 @@ fn test_example() {
 
 ## Visibility
 
-* The generated extension trait inherits the visibility of the original impl's item.
+* The generated extension trait inherits the visibility of the item in the original `impl`.
 
-* The visibility of all the items in the original impl must be identical.
+* The visibility of all the items in the original `impl` must be identical.
 
 */
 

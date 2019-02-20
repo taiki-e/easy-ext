@@ -47,7 +47,7 @@ impl StrExt for str {
 }
 ```
 
-### Supported items in the original `impl`.
+### Supported items
 
 * [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
 
@@ -59,7 +59,7 @@ impl StrExt for str {
 
 * The visibility of all the items in the original `impl` must be identical.
 
-See [the test codes](tests/test.rs) for examples.
+See [the test codes](tests/test.rs) for more examples.
 
 ## License
 
