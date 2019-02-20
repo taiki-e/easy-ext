@@ -1,0 +1,22 @@
+[package]
+name = "easy-ext"
+# NB: When modifying, also modify html_root_url in lib.rs
+version = "0.1.0"
+authors = ["Taiki Endo <te316e89@gmail.com>"]
+edition = "2018"
+license = "Apache-2.0/MIT"
+description = "An attribute macro for easily writing extension trait pattern."
+repository = "https://github.com/taiki-e/easy-ext"
+documentation = "https://docs.rs/easy-ext/"
+readme = "README.md"
+keywords = ["trait", "macros", "attribute"]
+categories = ["rust-patterns"]
+exclude = ["/.travis.yml"]
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "^0.4.13"
+quote = "^0.6.8"
+syn = { version = "^0.15.19", features = ["full", "extra-traits"] }
