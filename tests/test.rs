@@ -61,8 +61,8 @@ mod bar {
 #[test]
 fn test_vis() {
     // use bar::baz::StrExt as StrExt2; // ERROR trait `StrExt` is private
-    use bar::baz::StrExt3;
-    use bar::StrExt;
+    use self::bar::baz::StrExt3;
+    use self::bar::StrExt;
 
     assert_eq!("--".foo("-").as_str(), "__");
     assert_eq!("--".baz("-").as_str(), "__");
