@@ -13,7 +13,7 @@ fn test_simple() {
 }
 
 #[test]
-fn test_generics() {
+fn test_params() {
     #[ext(ResultExt)]
     impl<T, E> Result<T, E> {
         fn err_into<U>(self) -> Result<T, U>
@@ -38,6 +38,18 @@ fn test_lifetime() {
     }
 
     let _: Option<&u8> = (&mut Some(1)).into_ref();
+}
+
+#[test]
+fn test_generics() {
+    #[ext(IterExt)]
+    impl<I: IntoIterator> I {
+        fn _next(self) -> Option<I::Item> {
+            self.into_iter().next()
+        }
+    }
+
+    assert_eq!(vec![1, 2, 3]._next(), Some(1u8));
 }
 
 /*

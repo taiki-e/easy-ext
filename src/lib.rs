@@ -113,14 +113,16 @@ pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut input_impl: ItemImpl = parse_macro_input!(input);
     let ext_ident: Ident = parse_macro_input!(args);
 
-    let mut item = trait_from_item(&mut input_impl, ext_ident).into_token_stream();
-    item.extend(input_impl.into_token_stream());
-    TokenStream::from(item)
+    let mut tts = quote!(#[allow(patterns_in_fns_without_body)]); // mut self
+    tts.extend(trait_from_item(&mut input_impl, ext_ident).into_token_stream());
+    tts.extend(input_impl.into_token_stream());
+    TokenStream::from(tts)
 }
 
 fn trait_from_item(item_impl: &mut ItemImpl, ident: Ident) -> ItemTrait {
     let generics = item_impl.generics.clone();
-    let trait_ = parse_quote!(#ident #generics);
+    let ty_generics = generics.split_for_impl().1;
+    let trait_ = parse_quote!(#ident #ty_generics);
     item_impl.trait_ = Some((None, trait_, default()));
 
     let mut vis = None;
