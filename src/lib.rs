@@ -131,7 +131,7 @@ fn trait_from_item(item_impl: &mut ItemImpl, trait_ident: Ident) -> ItemTrait {
     ItemTrait {
         attrs: item_impl.attrs.clone(),
         vis: vis.unwrap_or(Visibility::Inherited),
-        unsafety: item_impl.unsafety.clone(),
+        unsafety: item_impl.unsafety,
         auto_token: None,
         trait_token: default(),
         ident: trait_ident,
