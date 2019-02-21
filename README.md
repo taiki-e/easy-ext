@@ -26,10 +26,13 @@ The current version of easy-ext requires Rust 1.31 or later.
 ```rust
 use easy_ext::ext;
 
-#[ext(StrExt)]
-impl str {
-    fn foo(&self) -> String {
-        /* */
+#[ext(ResultExt)]
+impl<T, E> Result<T, E> {
+    fn err_into<U>(self) -> Result<T, U>
+    where
+        E: Into<U>,
+    {
+        self.map_err(Into::into)
     }
 }
 ```
@@ -37,13 +40,18 @@ impl str {
 Code like this will be generated:
 
 ```rust
-trait StrExt {
-    fn foo(&self) -> String;
+trait ResultExt<T, E> {
+    fn err_into<U>(self) -> Result<T, U>
+    where
+        E: Into<U>;
 }
 
-impl StrExt for str {
-    fn foo(&self) -> String {
-        /* */
+impl<T, E> ResultExt<T, E> for Result<T, E> {
+    fn err_into<U>(self) -> Result<T, U>
+    where
+        E: Into<U>,
+    {
+        self.map_err(Into::into)
     }
 }
 ```
@@ -53,14 +61,6 @@ impl StrExt for str {
 * [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
 
 * [Associated constants](https://rust-lang-nursery.github.io/edition-guide/rust-2018/trait-system/associated-constants.html)
-
-### Visibility
-
-* The generated extension trait inherits the visibility of the item in the original `impl`.
-
-* The visibility of all the items in the original `impl` must be identical.
-
-See [the test codes](tests/test.rs) for more examples.
 
 ## License
 
