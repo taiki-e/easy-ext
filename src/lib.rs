@@ -42,7 +42,7 @@
 //! * [Associated constants](https://rust-lang-nursery.github.io/edition-guide/rust-2018/trait-system/associated-constants.html)
 //!
 
-#![doc(html_root_url = "https://docs.rs/easy-ext/0.1.1")]
+#![doc(html_root_url = "https://docs.rs/easy-ext/0.1.2")]
 #![deny(unsafe_code)]
 #![deny(rust_2018_idioms)]
 #![deny(unreachable_pub)]
