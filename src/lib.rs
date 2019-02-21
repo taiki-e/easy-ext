@@ -135,11 +135,8 @@ fn trait_from_item(item_impl: &mut ItemImpl, ident: Ident) -> ItemTrait {
         }))
     });
 
-    let mut attrs = item_impl.attrs.clone();
-    find_remove(&mut attrs, "inline"); // clippy::inline_fn_without_body
-
     ItemTrait {
-        attrs,
+        attrs: item_impl.attrs.clone(),
         vis: vis.unwrap_or(Visibility::Inherited),
         unsafety: item_impl.unsafety,
         auto_token: None,
@@ -201,8 +198,11 @@ fn const_from_const(impl_const: &ImplItemConst) -> TraitItemConst {
 }
 
 fn method_from_method(impl_method: &ImplItemMethod) -> TraitItemMethod {
+    let mut attrs = impl_method.attrs.clone();
+    find_remove(&mut attrs, "inline"); // clippy::inline_fn_without_body
+
     TraitItemMethod {
-        attrs: impl_method.attrs.clone(),
+        attrs,
         sig: impl_method.sig.clone(),
         default: None,
         semi_token: Some(default()),
