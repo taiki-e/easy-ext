@@ -54,8 +54,9 @@ use std::mem;
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{
-    parse_macro_input, parse_quote, Ident, ImplItem, ImplItemConst, ImplItemMethod, ImplItemType,
-    ItemImpl, ItemTrait, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType, Visibility,
+    parse_macro_input, parse_quote, Attribute, Ident, ImplItem, ImplItemConst, ImplItemMethod,
+    ImplItemType, ItemImpl, ItemTrait, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType,
+    Visibility,
 };
 
 /// An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
@@ -132,8 +133,11 @@ fn trait_from_item(item_impl: &mut ItemImpl, ident: Ident) -> ItemTrait {
         }))
     });
 
+    let mut attrs = item_impl.attrs.clone();
+    find_remove(&mut attrs, "inline"); // clippy::inline_fn_without_body
+
     ItemTrait {
-        attrs: item_impl.attrs.clone(),
+        attrs,
         vis: vis.unwrap_or(Visibility::Inherited),
         unsafety: item_impl.unsafety,
         auto_token: None,
@@ -205,4 +209,11 @@ fn method_from_method(impl_method: &ImplItemMethod) -> TraitItemMethod {
 
 fn default<T: Default>() -> T {
     T::default()
+}
+
+fn find_remove(attrs: &mut Vec<Attribute>, ident: &str) -> Option<Attribute> {
+    attrs
+        .iter()
+        .position(|Attribute { path, .. }| path.is_ident(ident))
+        .map(|i| attrs.remove(i))
 }
