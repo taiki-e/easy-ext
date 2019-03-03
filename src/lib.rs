@@ -113,8 +113,7 @@ pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut input_impl: ItemImpl = parse_macro_input!(input);
     let ext_ident: Ident = parse_macro_input!(args);
 
-    let mut tts = quote!(#[allow(patterns_in_fns_without_body)]); // mut self
-    tts.extend(trait_from_item(&mut input_impl, ext_ident).into_token_stream());
+    let mut tts = trait_from_item(&mut input_impl, ext_ident).into_token_stream();
     tts.extend(input_impl.into_token_stream());
     TokenStream::from(tts)
 }
@@ -135,8 +134,11 @@ fn trait_from_item(item_impl: &mut ItemImpl, ident: Ident) -> ItemTrait {
         }))
     });
 
+    let mut attrs = item_impl.attrs.clone();
+    attrs.push(parse_quote!(#[allow(patterns_in_fns_without_body)])); // mut self
+
     ItemTrait {
-        attrs: item_impl.attrs.clone(),
+        attrs,
         vis: vis.unwrap_or(Visibility::Inherited),
         unsafety: item_impl.unsafety,
         auto_token: None,
