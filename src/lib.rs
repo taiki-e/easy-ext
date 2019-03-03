@@ -44,8 +44,7 @@
 
 #![doc(html_root_url = "https://docs.rs/easy-ext/0.1.3")]
 #![deny(unsafe_code)]
-#![deny(rust_2018_idioms)]
-#![deny(unreachable_pub)]
+#![deny(rust_2018_idioms, unreachable_pub)]
 
 extern crate proc_macro;
 

@@ -69,6 +69,7 @@ mod bar {
     impl str {
         pub const FOO: &'static str = "_";
         // const FOO2: &'static str = "_"; // ERROR visibility mismatch
+
         pub fn foo(&self, pat: &str) -> String {
             self.replace(pat, Self::FOO)
         }
@@ -87,6 +88,7 @@ mod bar {
         #[ext(StrExt3)]
         impl str {
             // pub type Owned = String;
+
             pub fn baz(&self, pat: &str) -> String {
                 self.replace(pat, "_")
             }
@@ -94,6 +96,7 @@ mod bar {
             pub fn baz2(&self, pat: &str) -> String {
                 self.replace(pat, "-")
             }
+
             // ERROR visibility mismatch
             // fn baz2(&self, pat: &str) -> String {
             //     self.replace(pat, "_")
