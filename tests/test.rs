@@ -1,3 +1,7 @@
+#![deny(warnings)]
+#![deny(unsafe_code)]
+#![deny(rust_2018_idioms)]
+
 use easy_ext::ext;
 
 #[test]
