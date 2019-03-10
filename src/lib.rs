@@ -52,7 +52,7 @@ extern crate proc_macro;
 use std::mem;
 
 use proc_macro::TokenStream;
-use quote::{quote, ToTokens};
+use quote::ToTokens;
 use syn::{
     parse_macro_input, parse_quote, Attribute, Ident, ImplItem, ImplItemConst, ImplItemMethod,
     ImplItemType, ItemImpl, ItemTrait, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType,
