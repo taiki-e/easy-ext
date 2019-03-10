@@ -45,6 +45,7 @@
 #![doc(html_root_url = "https://docs.rs/easy-ext/0.1.3")]
 #![deny(unsafe_code)]
 #![deny(rust_2018_idioms, unreachable_pub)]
+#![deny(clippy::all, clippy::pedantic)]
 
 extern crate proc_macro;
 
@@ -126,10 +127,10 @@ fn trait_from_item(item_impl: &mut ItemImpl, ident: Ident) -> ItemTrait {
     let mut vis = None;
     let mut items = Vec::with_capacity(item_impl.items.len());
     item_impl.items.iter_mut().for_each(|item| {
-        items.push(trait_item_from_impl_item(item, |_vis| match &vis {
-            Some(v) if *v == _vis => {}
+        items.push(trait_item_from_impl_item(item, |vis_| match &vis {
+            Some(v) if *v == vis_ => {}
             Some(_) => panic!("visibility mismatch"),
-            None => vis = Some(_vis),
+            None => vis = Some(vis_),
         }))
     });
 
