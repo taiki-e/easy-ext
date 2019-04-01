@@ -216,8 +216,5 @@ fn default<T: Default>() -> T {
 }
 
 fn find_remove(attrs: &mut Vec<Attribute>, ident: &str) -> Option<Attribute> {
-    attrs
-        .iter()
-        .position(|Attribute { path, .. }| path.is_ident(ident))
-        .map(|i| attrs.remove(i))
+    attrs.iter().position(|Attribute { path, .. }| path.is_ident(ident)).map(|i| attrs.remove(i))
 }
