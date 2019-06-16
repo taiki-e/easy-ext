@@ -13,16 +13,14 @@ matrix:
     - rust: stable
     - rust: beta
     - rust: nightly
+      script:
+        - cargo test
 
     - rust: nightly
       name: cargo clippy
       script:
-        - if rustup component add clippy;
-          then
-            cargo clippy -- -Dwarnings;
-          else
-            echo 'Skipping clippy';
-          fi
+        - rustup component add clippy || travis_terminate 0
+        - cargo clippy --all --all-features --tests
 
     - rust: stable
       name: cargo fmt
@@ -35,11 +33,14 @@ matrix:
       script:
         - RUSTDOCFLAGS=-Dwarnings cargo doc --no-deps
 
+env:
+  - RUSTFLAGS=-Dwarnings
+
 before_script:
   - set -o errexit
 
 script:
-  - cargo test
+  - cargo check
 
 notifications:
   email:
