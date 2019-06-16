@@ -43,9 +43,12 @@
 //!
 
 #![doc(html_root_url = "https://docs.rs/easy-ext/0.1.4")]
-#![deny(unsafe_code)]
-#![deny(rust_2018_idioms, unreachable_pub)]
-#![deny(clippy::all, clippy::pedantic)]
+#![doc(test(attr(deny(warnings), allow(dead_code, unused_assignments, unused_variables))))]
+#![warn(unsafe_code)]
+#![warn(rust_2018_idioms, unreachable_pub)]
+#![warn(single_use_lifetimes)]
+#![warn(clippy::all, clippy::pedantic)]
+#![warn(clippy::nursery)]
 
 extern crate proc_macro;
 
