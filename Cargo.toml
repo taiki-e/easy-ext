@@ -11,7 +11,6 @@ documentation = "https://docs.rs/easy-ext/"
 readme = "README.md"
 keywords = ["trait", "macros", "attribute"]
 categories = ["rust-patterns"]
-exclude = ["/.travis.yml"]
 
 [lib]
 proc-macro = true
