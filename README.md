@@ -1,10 +1,21 @@
 # easy-ext
 
-[![Build Status](https://travis-ci.com/taiki-e/easy-ext.svg?branch=master)](https://travis-ci.com/taiki-e/easy-ext)
-[![version](https://img.shields.io/crates/v/easy-ext.svg)](https://crates.io/crates/easy-ext/)
-[![documentation](https://docs.rs/easy-ext/badge.svg)](https://docs.rs/easy-ext/)
-[![license](https://img.shields.io/crates/l/easy-ext.svg)](https://crates.io/crates/easy-ext/)
-[![Rustc Version](https://img.shields.io/badge/rustc-1.31+-lightgray.svg)](https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html)
+[![Build Status][azure-badge]][azure-url]
+[![Crates.io][crates-version-badge]][crates-url]
+[![Docs.rs][docs-badge]][docs-url]
+[![License][crates-license-badge]][crates-url]
+[![Minimum supported Rust version][rustc-badge]][rustc-url]
+
+[azure-badge]: https://dev.azure.com/taiki-e/taiki-e/_apis/build/status/taiki-e.easy-ext?branchName=master
+[azure-url]: https://dev.azure.com/taiki-e/taiki-e/_build/latest?definitionId=6&branchName=master
+[crates-version-badge]: https://img.shields.io/crates/v/easy-ext.svg
+[crates-license-badge]: https://img.shields.io/crates/l/easy-ext.svg
+[crates-badge]: https://img.shields.io/crates/v/easy-ext.svg
+[crates-url]: https://crates.io/crates/easy-ext/
+[docs-badge]: https://docs.rs/easy-ext/badge.svg
+[docs-url]: https://docs.rs/easy-ext/
+[rustc-badge]: https://img.shields.io/badge/rustc-1.31+-lightgray.svg
+[rustc-url]: https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html
 
 An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
 

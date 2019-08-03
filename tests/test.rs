@@ -1,6 +1,5 @@
-#![deny(warnings)]
-#![deny(unsafe_code)]
-#![deny(rust_2018_idioms)]
+#![warn(unsafe_code)]
+#![warn(rust_2018_idioms)]
 
 use easy_ext::ext;
 
