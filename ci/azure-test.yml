@@ -26,9 +26,6 @@ jobs:
       displayName: cargo ${{ parameters.cmd }}
 
     - ${{ if eq(parameters.rust, 'nightly') }}:
-      - script: cargo check --all
-        displayName: cargo check --all
-
       - script: |
           cargo update -Zminimal-versions
           cat Cargo.lock

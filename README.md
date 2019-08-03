@@ -30,7 +30,7 @@ Add this to your `Cargo.toml`:
 easy-ext = "0.1"
 ```
 
-The current version of easy-ext requires Rust 1.31 or later.
+The current easy-ext requires Rust 1.31 or later.
 
 ## Examples
 
