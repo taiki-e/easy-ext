@@ -48,6 +48,7 @@
 #![warn(rust_2018_idioms, unreachable_pub)]
 #![warn(single_use_lifetimes)]
 #![warn(clippy::all, clippy::pedantic)]
+#![allow(clippy::result_map_unwrap_or_else)]
 
 extern crate proc_macro;
 
@@ -56,9 +57,9 @@ use std::mem;
 use proc_macro::TokenStream;
 use quote::ToTokens;
 use syn::{
-    parse_macro_input, parse_quote, Attribute, Ident, ImplItem, ImplItemConst, ImplItemMethod,
-    ImplItemType, ItemImpl, ItemTrait, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType,
-    Visibility,
+    parse_quote, punctuated::Punctuated, token, Attribute, Ident, ImplItem, ImplItemConst,
+    ImplItemMethod, ImplItemType, ItemImpl, ItemTrait, Result, TraitItem, TraitItemConst,
+    TraitItemMethod, TraitItemType, Visibility,
 };
 
 /// An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
@@ -112,49 +113,56 @@ use syn::{
 ///
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
-    let mut input_impl: ItemImpl = parse_macro_input!(input);
-    let ext_ident: Ident = parse_macro_input!(args);
+    let mut item: ItemImpl = syn::parse_macro_input!(input);
+    let ext_ident: Ident = syn::parse_macro_input!(args);
 
-    let mut tts = trait_from_item(&mut input_impl, ext_ident).into_token_stream();
-    tts.extend(input_impl.into_token_stream());
+    let mut tts = trait_from_item(&mut item, ext_ident)
+        .map(ToTokens::into_token_stream)
+        .unwrap_or_else(|e| e.to_compile_error());
+
+    tts.extend(item.into_token_stream());
     TokenStream::from(tts)
 }
 
-fn trait_from_item(item_impl: &mut ItemImpl, ident: Ident) -> ItemTrait {
-    let generics = item_impl.generics.clone();
+fn trait_from_item(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
+    let generics = item.generics.clone();
     let ty_generics = generics.split_for_impl().1;
     let trait_ = parse_quote!(#ident #ty_generics);
-    item_impl.trait_ = Some((None, trait_, default()));
+    item.trait_ = Some((None, trait_, token::For::default()));
 
     let mut vis = None;
-    let mut items = Vec::with_capacity(item_impl.items.len());
-    item_impl.items.iter_mut().for_each(|item| {
-        items.push(trait_item_from_impl_item(item, |vis_| match &vis {
-            Some(v) if *v == vis_ => {}
+    let mut items = Vec::with_capacity(item.items.len());
+    item.items.iter_mut().try_for_each(|item| {
+        trait_item_from_impl_item(item, |v| match &vis {
+            Some(x) if *x == v => {}
             Some(_) => panic!("visibility mismatch"),
-            None => vis = Some(vis_),
-        }))
-    });
+            None => vis = Some(v),
+        })
+        .map(|item| items.push(item))
+    })?;
 
-    let mut attrs = item_impl.attrs.clone();
+    let mut attrs = item.attrs.clone();
     attrs.push(parse_quote!(#[allow(patterns_in_fns_without_body)])); // mut self
 
-    ItemTrait {
+    Ok(ItemTrait {
         attrs,
         vis: vis.unwrap_or(Visibility::Inherited),
-        unsafety: item_impl.unsafety,
+        unsafety: item.unsafety,
         auto_token: None,
-        trait_token: default(),
+        trait_token: token::Trait::default(),
         ident,
         generics,
         colon_token: None,
-        supertraits: default(),
-        brace_token: default(),
+        supertraits: Punctuated::new(),
+        brace_token: token::Brace::default(),
         items,
-    }
+    })
 }
 
-fn trait_item_from_impl_item(impl_item: &mut ImplItem, f: impl FnOnce(Visibility)) -> TraitItem {
+fn trait_item_from_impl_item(
+    impl_item: &mut ImplItem,
+    f: impl FnOnce(Visibility),
+) -> Result<TraitItem> {
     macro_rules! from {
         ($($v:ident => $i:ident,)*) => {
             match impl_item {
@@ -162,9 +170,9 @@ fn trait_item_from_impl_item(impl_item: &mut ImplItem, f: impl FnOnce(Visibility
                     let vis = mem::replace(&mut item.vis, Visibility::Inherited);
                     item.defaultness = None;
                     f(vis);
-                    TraitItem::$v($i(item))
+                    Ok(TraitItem::$v($i(item)))
                 })*
-                _ => panic!("unsupported item"),
+                _ => Err(syn::Error::new_spanned(impl_item, "unsupported item")),
             }
         };
     }
@@ -179,25 +187,25 @@ fn trait_item_from_impl_item(impl_item: &mut ImplItem, f: impl FnOnce(Visibility
 fn type_from_type(impl_type: &ImplItemType) -> TraitItemType {
     TraitItemType {
         attrs: impl_type.attrs.clone(),
-        type_token: default(),
+        type_token: token::Type::default(),
         ident: impl_type.ident.clone(),
         generics: impl_type.generics.clone(),
         colon_token: None,
-        bounds: default(),
+        bounds: Punctuated::new(),
         default: None,
-        semi_token: default(),
+        semi_token: token::Semi::default(),
     }
 }
 
 fn const_from_const(impl_const: &ImplItemConst) -> TraitItemConst {
     TraitItemConst {
         attrs: impl_const.attrs.clone(),
-        const_token: default(),
+        const_token: token::Const::default(),
         ident: impl_const.ident.clone(),
-        colon_token: default(),
+        colon_token: token::Colon::default(),
         ty: impl_const.ty.clone(),
         default: None,
-        semi_token: default(),
+        semi_token: token::Semi::default(),
     }
 }
 
@@ -209,14 +217,10 @@ fn method_from_method(impl_method: &ImplItemMethod) -> TraitItemMethod {
         attrs,
         sig: impl_method.sig.clone(),
         default: None,
-        semi_token: Some(default()),
+        semi_token: Some(token::Semi::default()),
     }
 }
 
-fn default<T: Default>() -> T {
-    T::default()
-}
-
 fn find_remove(attrs: &mut Vec<Attribute>, ident: &str) -> Option<Attribute> {
-    attrs.iter().position(|Attribute { path, .. }| path.is_ident(ident)).map(|i| attrs.remove(i))
+    attrs.iter().position(|attr| attr.path.is_ident(ident)).map(|i| attrs.remove(i))
 }

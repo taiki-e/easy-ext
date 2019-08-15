@@ -1,8 +1,10 @@
 # Unreleased
 
+* Updated `syn` and `quote` to 1.0
+
 # 0.1.4 - 2019-03-10
 
-* Update minimum syn version to 0.15.29
+* Update minimum `syn` version to 0.15.29
 
 # 0.1.3 - 2019-02-21
 
