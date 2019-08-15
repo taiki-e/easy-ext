@@ -1,5 +1,7 @@
 # Unreleased
 
+# 0.1.5 - 2019-08-15
+
 * Updated `syn` and `quote` to 1.0
 
 # 0.1.4 - 2019-03-10
