@@ -6,10 +6,12 @@ edition = "2018"
 license = "Apache-2.0/MIT"
 repository = "https://github.com/taiki-e/easy-ext"
 documentation = "https://docs.rs/easy-ext/"
-readme = "README.md"
 keywords = ["trait", "macros", "attribute"]
 categories = ["rust-patterns"]
-description = "An attribute macro for easily writing extension trait pattern."
+readme = "README.md"
+description = """
+An attribute macro for easily writing extension trait pattern.
+"""
 
 [lib]
 proc-macro = true
