@@ -10,11 +10,12 @@ on:
 
 jobs:
   test:
+    name: test
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: -Dwarnings
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         rust:
           # This is the minimum Rust version supported by easy-ext.
@@ -45,9 +46,10 @@ jobs:
         if: matrix.rust == 'nightly'
         run: |
           cargo update -Zminimal-versions
-          cargo check
+          cargo check --all-features
 
   style:
+    name: style
     runs-on: ubuntu-latest
     env:
       RUSTFLAGS: -Dwarnings
