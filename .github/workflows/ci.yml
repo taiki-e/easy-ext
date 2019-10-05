@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - master
+      - staging
+      - trying
   schedule:
     - cron: 00 01 * * 00 # Weekly
 
