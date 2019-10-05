@@ -1,13 +1,10 @@
 # easy-ext
 
-[![ci-badge]][ci-url]
 [![crates-badge]][crates-url]
 [![docs-badge]][docs-url]
 [![license-badge]][license]
 [![rustc-badge]][rustc-url]
 
-[ci-badge]: https://github.com/taiki-e/easy-ext/workflows/ci/badge.svg
-[ci-url]: https://github.com/taiki-e/easy-ext/actions?workflow=ci
 [crates-badge]: https://img.shields.io/crates/v/easy-ext.svg
 [crates-url]: https://crates.io/crates/easy-ext/
 [docs-badge]: https://docs.rs/easy-ext/badge.svg
