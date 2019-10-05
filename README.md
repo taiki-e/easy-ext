@@ -1,16 +1,19 @@
 # easy-ext
 
-[![Crates.io][crates-version-badge]][crates-url]
-[![Docs.rs][docs-badge]][docs-url]
-[![License][crates-license-badge]][crates-url]
-[![Minimum supported Rust version][rustc-badge]][rustc-url]
+[![ci-badge]][ci-url]
+[![crates-badge]][crates-url]
+[![docs-badge]][docs-url]
+[![license-badge]][license]
+[![rustc-badge]][rustc-url]
 
-[crates-version-badge]: https://img.shields.io/crates/v/easy-ext.svg
-[crates-license-badge]: https://img.shields.io/crates/l/easy-ext.svg
+[ci-badge]: https://github.com/taiki-e/easy-ext/workflows/ci/badge.svg
+[ci-url]: https://github.com/taiki-e/easy-ext/actions?workflow=ci
 [crates-badge]: https://img.shields.io/crates/v/easy-ext.svg
 [crates-url]: https://crates.io/crates/easy-ext/
 [docs-badge]: https://docs.rs/easy-ext/badge.svg
 [docs-url]: https://docs.rs/easy-ext/
+[license-badge]: https://img.shields.io/crates/l/easy-ext.svg
+[license]: #license
 [rustc-badge]: https://img.shields.io/badge/rustc-1.31+-lightgray.svg
 [rustc-url]: https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html
 
