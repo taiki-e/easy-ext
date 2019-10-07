@@ -40,7 +40,6 @@
 //! * [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
 //!
 //! * [Associated constants](https://rust-lang-nursery.github.io/edition-guide/rust-2018/trait-system/associated-constants.html)
-//!
 
 #![doc(html_root_url = "https://docs.rs/easy-ext/0.1.5")]
 #![doc(test(
@@ -112,7 +111,6 @@ use syn::{
 /// * The generated extension trait inherits the visibility of the item in the original `impl`.
 ///
 /// * The visibility of all the items in the original `impl` must be identical.
-///
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item: ItemImpl = syn::parse_macro_input!(input);
