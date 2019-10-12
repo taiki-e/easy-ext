@@ -1,5 +1,5 @@
 #![warn(unsafe_code)]
-#![warn(rust_2018_idioms)]
+#![warn(rust_2018_idioms, single_use_lifetimes)]
 
 use easy_ext::ext;
 
@@ -71,7 +71,6 @@ mod bar {
     #[ext(StrExt)]
     impl str {
         pub const FOO: &'static str = "_";
-        // const FOO2: &'static str = "_"; // ERROR visibility mismatch
 
         pub fn foo(&self, pat: &str) -> String {
             self.replace(pat, Self::FOO)
@@ -90,8 +89,6 @@ mod bar {
 
         #[ext(StrExt3)]
         impl str {
-            // pub type Owned = String;
-
             pub fn baz(&self, pat: &str) -> String {
                 self.replace(pat, "_")
             }
@@ -99,18 +96,12 @@ mod bar {
             pub fn baz2(&self, pat: &str) -> String {
                 self.replace(pat, "-")
             }
-
-            // ERROR visibility mismatch
-            // fn baz2(&self, pat: &str) -> String {
-            //     self.replace(pat, "_")
-            // }
         }
     }
 }
 
 #[test]
 fn test_vis() {
-    // use bar::baz::StrExt as StrExt2; // ERROR trait `StrExt` is private
     use self::bar::{baz::StrExt3, StrExt};
 
     assert_eq!("--".foo("-").as_str(), "__");

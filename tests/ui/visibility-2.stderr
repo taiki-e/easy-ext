@@ -1,0 +1,5 @@
+error: All items must have inherited visibility
+ --> $DIR/visibility-2.rs:7:5
+  |
+7 |     pub fn bar(&self) -> String {} //~ ERROR All items must have inherited visibility
+  |     ^^^
