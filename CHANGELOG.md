@@ -1,5 +1,7 @@
 # Unreleased
 
+# 0.1.6 - 2019-10-12
+
 * Improved error messages related to visibility.
 
 # 0.1.5 - 2019-08-15
