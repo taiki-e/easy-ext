@@ -1,0 +1,5 @@
+error: All items must have a visibility of `pub`
+ --> $DIR/visibility-1.rs:6:11
+  |
+6 |     const Bar: &'static str = "_"; //~ ERROR All items must have a visibility of `pub`
+  |           ^^^

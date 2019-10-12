@@ -19,3 +19,7 @@ proc-macro = true
 [dependencies]
 quote = "1.0"
 syn = { version = "1.0", features = ["full", "extra-traits"] }
+
+[dev-dependencies]
+rustversion = "1.0"
+trybuild = "1.0"

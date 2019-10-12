@@ -57,11 +57,16 @@ use std::mem;
 
 use proc_macro::TokenStream;
 use quote::ToTokens;
-use syn::{
-    parse_quote, punctuated::Punctuated, token, Attribute, Ident, ImplItem, ImplItemConst,
-    ImplItemMethod, ImplItemType, ItemImpl, ItemTrait, Result, TraitItem, TraitItemConst,
-    TraitItemMethod, TraitItemType, Visibility,
-};
+use syn::{punctuated::Punctuated, *};
+
+macro_rules! error {
+    ($span:expr, $msg:expr) => {
+        Err(syn::Error::new_spanned(&$span, $msg))
+    };
+    ($span:expr, $($tt:tt)*) => {
+        error!($span, format!($($tt)*))
+    };
+}
 
 /// An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
 ///
@@ -116,12 +121,14 @@ pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item: ItemImpl = syn::parse_macro_input!(input);
     let ext_ident: Ident = syn::parse_macro_input!(args);
 
-    let mut tts = trait_from_item(&mut item, ext_ident)
+    trait_from_item(&mut item, ext_ident)
         .map(ToTokens::into_token_stream)
-        .unwrap_or_else(|e| e.to_compile_error());
-
-    tts.extend(item.into_token_stream());
-    TokenStream::from(tts)
+        .map(|mut tokens| {
+            tokens.extend(item.into_token_stream());
+            tokens
+        })
+        .unwrap_or_else(|e| e.to_compile_error())
+        .into()
 }
 
 fn trait_from_item(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
@@ -132,14 +139,13 @@ fn trait_from_item(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
 
     let mut vis = None;
     let mut items = Vec::with_capacity(item.items.len());
-    item.items.iter_mut().try_for_each(|item| {
-        trait_item_from_impl_item(item, |v| match &vis {
-            Some(x) if *x == v => {}
-            Some(_) => panic!("visibility mismatch"),
-            None => vis = Some(v),
-        })
-        .map(|item| items.push(item))
-    })?;
+    if let Err(e) = item
+        .items
+        .iter_mut()
+        .try_for_each(|item| trait_item_from_impl_item(item, &mut vis).map(|item| items.push(item)))
+    {
+        return Err(e);
+    }
 
     let mut attrs = item.attrs.clone();
     attrs.push(parse_quote!(#[allow(patterns_in_fns_without_body)])); // mut self
@@ -161,43 +167,47 @@ fn trait_from_item(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
 
 fn trait_item_from_impl_item(
     impl_item: &mut ImplItem,
-    f: impl FnOnce(Visibility),
+    prev: &mut Option<Visibility>,
 ) -> Result<TraitItem> {
-    macro_rules! from {
-        ($($v:ident => $i:ident,)*) => {
-            match impl_item {
-                $(ImplItem::$v(item) => {
-                    let vis = mem::replace(&mut item.vis, Visibility::Inherited);
-                    item.defaultness = None;
-                    f(vis);
-                    Ok(TraitItem::$v($i(item)))
-                })*
-                _ => Err(syn::Error::new_spanned(impl_item, "unsupported item")),
+    fn check_visibility(
+        current: Visibility,
+        prev: &mut Option<Visibility>,
+        span: &dyn ToTokens,
+    ) -> Result<()> {
+        match prev {
+            None => *prev = Some(current),
+            Some(prev) if *prev == current => {}
+            Some(prev) => {
+                if let Visibility::Inherited = prev {
+                    return error!(current, "All items must have inherited visibility");
+                } else {
+                    return error!(
+                        if let Visibility::Inherited = current { span } else { &current },
+                        "All items must have a visibility of `{}`",
+                        prev.to_token_stream(),
+                    );
+                }
             }
-        };
+        }
+        Ok(())
     }
 
-    from! {
-        Const => const_from_const,
-        Method => method_from_method,
-        Type => type_from_type,
-    }
-}
-
-fn type_from_type(impl_type: &ImplItemType) -> TraitItemType {
-    TraitItemType {
-        attrs: impl_type.attrs.clone(),
-        type_token: token::Type::default(),
-        ident: impl_type.ident.clone(),
-        generics: impl_type.generics.clone(),
-        colon_token: None,
-        bounds: Punctuated::new(),
-        default: None,
-        semi_token: token::Semi::default(),
+    match impl_item {
+        ImplItem::Const(item) => {
+            let vis = mem::replace(&mut item.vis, Visibility::Inherited);
+            check_visibility(vis, prev, &item.ident)?;
+            Ok(TraitItem::Const(from_const(item)))
+        }
+        ImplItem::Method(item) => {
+            let vis = mem::replace(&mut item.vis, Visibility::Inherited);
+            check_visibility(vis, prev, &item.sig.ident)?;
+            Ok(TraitItem::Method(from_method(item)))
+        }
+        _ => error!(impl_item, "unsupported item"),
     }
 }
 
-fn const_from_const(impl_const: &ImplItemConst) -> TraitItemConst {
+fn from_const(impl_const: &ImplItemConst) -> TraitItemConst {
     TraitItemConst {
         attrs: impl_const.attrs.clone(),
         const_token: token::Const::default(),
@@ -209,7 +219,7 @@ fn const_from_const(impl_const: &ImplItemConst) -> TraitItemConst {
     }
 }
 
-fn method_from_method(impl_method: &ImplItemMethod) -> TraitItemMethod {
+fn from_method(impl_method: &ImplItemMethod) -> TraitItemMethod {
     let mut attrs = impl_method.attrs.clone();
     find_remove(&mut attrs, "inline"); // clippy::inline_fn_without_body
 
