@@ -48,8 +48,7 @@
 ))]
 #![forbid(unsafe_code)]
 #![warn(rust_2018_idioms, single_use_lifetimes, unreachable_pub)]
-#![warn(clippy::all, clippy::pedantic)]
-#![allow(clippy::result_map_unwrap_or_else)]
+#![warn(clippy::all)]
 
 extern crate proc_macro;
 
