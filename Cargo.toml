@@ -13,6 +13,8 @@ description = """
 An attribute macro for easily writing extension trait pattern.
 """
 
+[workspace]
+
 [lib]
 proc-macro = true
 
