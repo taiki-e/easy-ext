@@ -6,9 +6,9 @@
 [![rustc-badge]][rustc-url]
 
 [crates-badge]: https://img.shields.io/crates/v/easy-ext.svg
-[crates-url]: https://crates.io/crates/easy-ext/
+[crates-url]: https://crates.io/crates/easy-ext
 [docs-badge]: https://docs.rs/easy-ext/badge.svg
-[docs-url]: https://docs.rs/easy-ext/
+[docs-url]: https://docs.rs/easy-ext
 [license-badge]: https://img.shields.io/crates/l/easy-ext.svg
 [license]: #license
 [rustc-badge]: https://img.shields.io/badge/rustc-1.31+-lightgray.svg
