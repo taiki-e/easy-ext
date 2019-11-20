@@ -138,13 +138,9 @@ fn trait_from_item(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
 
     let mut vis = None;
     let mut items = Vec::with_capacity(item.items.len());
-    if let Err(e) = item
-        .items
-        .iter_mut()
-        .try_for_each(|item| trait_item_from_impl_item(item, &mut vis).map(|item| items.push(item)))
-    {
-        return Err(e);
-    }
+    item.items.iter_mut().try_for_each(|item| {
+        trait_item_from_impl_item(item, &mut vis).map(|item| items.push(item))
+    })?;
 
     let mut attrs = item.attrs.clone();
     attrs.push(parse_quote!(#[allow(patterns_in_fns_without_body)])); // mut self
