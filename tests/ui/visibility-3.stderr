@@ -2,4 +2,10 @@ error[E0603]: trait `StrExt` is private
   --> $DIR/visibility-3.rs:13:14
    |
 13 |     use foo::StrExt; //~ ERROR trait `StrExt` is private [E0603]
-   |              ^^^^^^
+   |              ^^^^^^ this trait is private
+   |
+note: the trait `StrExt` is defined here
+  --> $DIR/visibility-3.rs:4:5
+   |
+4  |     #[ext(StrExt)]
+   |     ^^^^^^^^^^^^^^
