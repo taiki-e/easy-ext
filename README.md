@@ -64,6 +64,22 @@ impl<T, E> ResultExt<T, E> for Result<T, E> {
 }
 ```
 
+You can elide the trait name. Note that in this case, `#[ext]` assigns a random name, so you cannot import/export the generated trait.
+
+```rust
+use easy_ext::ext;
+
+#[ext]
+impl<T, E> Result<T, E> {
+    fn err_into<U>(self) -> Result<T, U>
+    where
+        E: Into<U>,
+    {
+        self.map_err(Into::into)
+    }
+}
+```
+
 ### Supported items
 
 * [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)

@@ -47,7 +47,9 @@
     attr(deny(warnings, rust_2018_idioms, single_use_lifetimes), allow(dead_code))
 ))]
 #![forbid(unsafe_code)]
-#![warn(rust_2018_idioms, single_use_lifetimes, unreachable_pub)]
+#![warn(rust_2018_idioms, unreachable_pub)]
+// It cannot be included in the published code because these lints have false positives in the minimum required version.
+#![cfg_attr(test, warn(single_use_lifetimes))]
 #![warn(clippy::all)]
 // mem::take requires Rust 1.40
 #![allow(clippy::mem_replace_with_default)]
@@ -56,10 +58,14 @@
 #[allow(unused_extern_crates)]
 extern crate proc_macro;
 
-use std::mem;
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+    mem,
+};
 
-use proc_macro::TokenStream;
-use quote::ToTokens;
+use proc_macro::{Delimiter, Spacing, TokenStream, TokenTree};
+use quote::{format_ident, ToTokens};
 use syn::{punctuated::Punctuated, *};
 
 macro_rules! error {
@@ -121,8 +127,12 @@ macro_rules! error {
 /// * The visibility of all the items in the original `impl` must be identical.
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
+    let ext_ident = match syn::parse_macro_input!(args) {
+        None => format_ident!("__ExtTrait{}", hash(&input)),
+        Some(ext_ident) => ext_ident,
+    };
+
     let mut item: ItemImpl = syn::parse_macro_input!(input);
-    let ext_ident: Ident = syn::parse_macro_input!(args);
 
     trait_from_item(&mut item, ext_ident)
         .map(ToTokens::into_token_stream)
@@ -232,4 +242,62 @@ fn from_method(impl_method: &ImplItemMethod) -> TraitItemMethod {
 
 fn find_remove(attrs: &mut Vec<Attribute>, ident: &str) -> Option<Attribute> {
     attrs.iter().position(|attr| attr.path.is_ident(ident)).map(|i| attrs.remove(i))
+}
+
+// =================================================================================================
+// Hash
+
+/// Returns the hash value of the input AST.
+fn hash(tokens: &TokenStream) -> u64 {
+    let tokens = TokenStreamHelper(tokens);
+    let mut hasher = DefaultHasher::new();
+    tokens.hash(&mut hasher);
+    hasher.finish()
+}
+
+// Based on https://github.com/dtolnay/syn/blob/1.0.5/src/tt.rs
+
+struct TokenTreeHelper<'a>(&'a TokenTree);
+
+impl Hash for TokenTreeHelper<'_> {
+    fn hash<H: Hasher>(&self, h: &mut H) {
+        match self.0 {
+            TokenTree::Group(g) => {
+                0_u8.hash(h);
+                match g.delimiter() {
+                    Delimiter::Parenthesis => 0_u8.hash(h),
+                    Delimiter::Brace => 1_u8.hash(h),
+                    Delimiter::Bracket => 2_u8.hash(h),
+                    Delimiter::None => 3_u8.hash(h),
+                }
+
+                for tt in g.stream() {
+                    TokenTreeHelper(&tt).hash(h);
+                }
+                0xff_u8.hash(h); // terminator w/ a variant we don't normally hash
+            }
+            TokenTree::Punct(op) => {
+                1_u8.hash(h);
+                op.as_char().hash(h);
+                match op.spacing() {
+                    Spacing::Alone => 0_u8.hash(h),
+                    Spacing::Joint => 1_u8.hash(h),
+                }
+            }
+            TokenTree::Literal(lit) => (2_u8, lit.to_string()).hash(h),
+            TokenTree::Ident(word) => (3_u8, word.to_string()).hash(h),
+        }
+    }
+}
+
+struct TokenStreamHelper<'a>(&'a TokenStream);
+
+impl Hash for TokenStreamHelper<'_> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        let tokens = self.0.clone().into_iter().collect::<Vec<_>>();
+        tokens.len().hash(state);
+        for tt in tokens {
+            TokenTreeHelper(&tt).hash(state);
+        }
+    }
 }

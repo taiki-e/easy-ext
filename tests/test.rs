@@ -5,7 +5,7 @@ use easy_ext::ext;
 
 #[test]
 fn test_simple() {
-    #[ext(StrExt)]
+    #[ext]
     impl str {
         fn foo(&self, pat: &str) -> String {
             self.replace(pat, "_")
@@ -17,7 +17,7 @@ fn test_simple() {
 
 #[test]
 fn test_params() {
-    #[ext(ResultExt)]
+    #[ext]
     impl<T, E> Result<T, E> {
         fn err_into<U>(self) -> Result<T, U>
         where

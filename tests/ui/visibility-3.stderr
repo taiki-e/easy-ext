@@ -9,3 +9,4 @@ note: the trait `StrExt` is defined here
    |
 4  |     #[ext(StrExt)]
    |     ^^^^^^^^^^^^^^
+   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
