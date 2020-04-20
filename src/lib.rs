@@ -7,7 +7,7 @@
 //!
 //! #[ext(ResultExt)]
 //! impl<T, E> Result<T, E> {
-//!     fn err_into<U>(self) -> Result<T, U>
+//!     pub fn err_into<U>(self) -> Result<T, U>
 //!     where
 //!         E: Into<U>,
 //!     {
@@ -19,7 +19,7 @@
 //! Code like this will be generated:
 //!
 //! ```rust
-//! trait ResultExt<T, E> {
+//! pub trait ResultExt<T, E> {
 //!     fn err_into<U>(self) -> Result<T, U>
 //!     where
 //!         E: Into<U>;
@@ -124,6 +124,12 @@ macro_rules! error {
 /// }
 /// ```
 ///
+/// ### Visibility
+///
+/// * The generated extension trait inherits the visibility of the item in the original `impl`.
+///
+/// * The visibility of all the items in the original `impl` must be identical.
+///
 /// ### [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
 ///
 /// If you want the extension trait to be a subtrait of another trait,
@@ -164,12 +170,6 @@ macro_rules! error {
 ///     const MSG: &'static str = "Hello!";
 /// }
 /// ```
-///
-/// ### Visibility
-///
-/// * The generated extension trait inherits the visibility of the item in the original `impl`.
-///
-/// * The visibility of all the items in the original `impl` must be identical.
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     let ext_ident = match syn::parse_macro_input!(args) {

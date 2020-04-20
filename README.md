@@ -36,7 +36,7 @@ use easy_ext::ext;
 
 #[ext(ResultExt)]
 impl<T, E> Result<T, E> {
-    fn err_into<U>(self) -> Result<T, U>
+    pub fn err_into<U>(self) -> Result<T, U>
     where
         E: Into<U>,
     {
@@ -48,7 +48,7 @@ impl<T, E> Result<T, E> {
 Code like this will be generated:
 
 ```rust
-trait ResultExt<T, E> {
+pub trait ResultExt<T, E> {
     fn err_into<U>(self) -> Result<T, U>
     where
         E: Into<U>;
