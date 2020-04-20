@@ -60,7 +60,7 @@ use std::{collections::hash_map::DefaultHasher, hash::Hasher, mem};
 
 use proc_macro::TokenStream;
 use quote::{format_ident, ToTokens};
-use syn::{punctuated::Punctuated, *};
+use syn::{punctuated::Punctuated, visit_mut::VisitMut, *};
 
 macro_rules! error {
     ($span:expr, $msg:expr) => {
@@ -189,16 +189,76 @@ pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
         .into()
 }
 
+fn determine_trait_generics<'a>(generics: &mut Generics, self_ty: &'a Type) -> Option<&'a Ident> {
+    if let Type::Path(TypePath { path, qself: None }) = self_ty {
+        if let Some(ident) = path.get_ident() {
+            let i = generics.params.iter().position(|param| {
+                if let GenericParam::Type(param) = param { param.ident == *ident } else { false }
+            });
+            if let Some(i) = i {
+                let mut params = mem::replace(&mut generics.params, Punctuated::new())
+                    .into_iter()
+                    .collect::<Vec<_>>();
+                let param = params.remove(i);
+                generics.params = params.into_iter().collect();
+
+                if let GenericParam::Type(TypeParam {
+                    colon_token: Some(colon_token),
+                    bounds,
+                    ..
+                }) = param
+                {
+                    generics.make_where_clause().predicates.push(WherePredicate::Type(
+                        PredicateType {
+                            lifetimes: None,
+                            bounded_ty: syn::parse_quote!(Self),
+                            colon_token,
+                            bounds,
+                        },
+                    ));
+                }
+
+                return Some(ident);
+            }
+        }
+    }
+    None
+}
+
 fn trait_from_item(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
-    let generics = item.generics.clone();
+    /// Replace `self_ty` with `Self`.
+    struct ReplaceParam<'a> {
+        self_ty: &'a Ident,
+    }
+
+    impl VisitMut for ReplaceParam<'_> {
+        fn visit_ident_mut(&mut self, ident: &mut Ident) {
+            if *ident == *self.self_ty {
+                *ident = format_ident!("Self", span = ident.span());
+            }
+        }
+    }
+
+    let mut generics = item.generics.clone();
+    let mut visitor = determine_trait_generics(&mut generics, &item.self_ty)
+        .map(|self_ty| ReplaceParam { self_ty });
+
+    if let Some(visitor) = &mut visitor {
+        visitor.visit_generics_mut(&mut generics);
+    }
     let ty_generics = generics.split_for_impl().1;
     let trait_ = parse_quote!(#ident #ty_generics);
-    item.trait_ = Some((None, trait_, token::For::default()));
+    item.trait_ = Some((None, trait_, Default::default()));
 
     let mut vis = None;
     let mut items = Vec::with_capacity(item.items.len());
     item.items.iter_mut().try_for_each(|item| {
-        trait_item_from_impl_item(item, &mut vis).map(|item| items.push(item))
+        trait_item_from_impl_item(item, &mut vis).map(|mut item| {
+            if let Some(visitor) = &mut visitor {
+                visitor.visit_trait_item_mut(&mut item);
+            }
+            items.push(item)
+        })
     })?;
 
     let mut attrs = item.attrs.clone();
@@ -209,12 +269,12 @@ fn trait_from_item(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
         vis: vis.unwrap_or(Visibility::Inherited),
         unsafety: item.unsafety,
         auto_token: None,
-        trait_token: token::Trait::default(),
+        trait_token: Default::default(),
         ident,
         generics,
         colon_token: None,
         supertraits: Punctuated::new(),
-        brace_token: token::Brace::default(),
+        brace_token: Default::default(),
         items,
     })
 }
@@ -264,12 +324,12 @@ fn trait_item_from_impl_item(
 fn from_const(impl_const: &ImplItemConst) -> TraitItemConst {
     TraitItemConst {
         attrs: impl_const.attrs.clone(),
-        const_token: token::Const::default(),
+        const_token: Default::default(),
         ident: impl_const.ident.clone(),
-        colon_token: token::Colon::default(),
+        colon_token: Default::default(),
         ty: impl_const.ty.clone(),
         default: None,
-        semi_token: token::Semi::default(),
+        semi_token: Default::default(),
     }
 }
 
@@ -281,7 +341,7 @@ fn from_method(impl_method: &ImplItemMethod) -> TraitItemMethod {
         attrs,
         sig: impl_method.sig.clone(),
         default: None,
-        semi_token: Some(token::Semi::default()),
+        semi_token: Some(Default::default()),
     }
 }
 

@@ -4,7 +4,7 @@
 use easy_ext::ext;
 
 #[test]
-fn test_simple() {
+fn simple() {
     #[ext]
     impl str {
         fn foo(&self, pat: &str) -> String {
@@ -16,7 +16,7 @@ fn test_simple() {
 }
 
 #[test]
-fn test_params() {
+fn params() {
     #[ext]
     impl<T, E> Result<T, E> {
         fn err_into<U>(self) -> Result<T, U>
@@ -32,7 +32,7 @@ fn test_params() {
 }
 
 #[test]
-fn test_lifetime() {
+fn lifetime() {
     #[ext(OptionExt)]
     impl<'a, T> &'a mut Option<T> {
         fn into_ref(self) -> Option<&'a T> {
@@ -44,7 +44,7 @@ fn test_lifetime() {
 }
 
 #[test]
-fn test_generics() {
+fn generics() {
     #[ext(IterExt)]
     impl<I: IntoIterator> I {
         fn _next(self) -> Option<I::Item> {
@@ -101,9 +101,46 @@ mod bar {
 }
 
 #[test]
-fn test_vis() {
+fn visibility() {
     use self::bar::{baz::StrExt3, StrExt};
 
     assert_eq!("--".foo("-").as_str(), "__");
     assert_eq!("--".baz("-").as_str(), "__");
+}
+
+#[allow(clippy::declare_interior_mutable_const)]
+#[test]
+fn trait_generics() {
+    #[derive(Debug, PartialEq, Eq)]
+    struct A {}
+
+    impl Iterator for A {
+        type Item = ();
+        fn next(&mut self) -> Option<Self::Item> {
+            None
+        }
+    }
+
+    #[ext(ConstInit)]
+    impl A {
+        const INIT: Self = A {};
+    }
+
+    #[ext(Ext)]
+    impl<I: Iterator + ConstInit> I {
+        const CONST: I = I::INIT;
+        fn method(mut self) -> Option<I::Item> {
+            self.next()
+        }
+    }
+
+    assert_eq!(A {}.method(), None);
+
+    fn a<T: Ext + Eq + std::fmt::Debug>(mut x: T) {
+        let y = T::CONST;
+        assert_eq!(x, y);
+        assert!(x.next().is_none());
+    }
+
+    a(A::INIT);
 }
