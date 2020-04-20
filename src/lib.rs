@@ -283,6 +283,18 @@ fn trait_item_from_impl_item(
     impl_item: &mut ImplItem,
     prev: &mut Option<Visibility>,
 ) -> Result<TraitItem> {
+    fn compare_visibility(x: &Visibility, y: &Visibility) -> bool {
+        match (x, y) {
+            (Visibility::Public(_), Visibility::Public(_))
+            | (Visibility::Crate(_), Visibility::Crate(_))
+            | (Visibility::Inherited, Visibility::Inherited) => true,
+            (Visibility::Restricted(x), Visibility::Restricted(y)) => {
+                x.to_token_stream().to_string() == y.to_token_stream().to_string()
+            }
+            _ => false,
+        }
+    }
+
     fn check_visibility(
         current: Visibility,
         prev: &mut Option<Visibility>,
@@ -290,7 +302,7 @@ fn trait_item_from_impl_item(
     ) -> Result<()> {
         match prev {
             None => *prev = Some(current),
-            Some(prev) if *prev == current => {}
+            Some(prev) if compare_visibility(prev, &current) => {}
             Some(prev) => {
                 if let Visibility::Inherited = prev {
                     return error!(current, "All items must have inherited visibility");
