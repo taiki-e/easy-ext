@@ -41,7 +41,7 @@
 //!
 //! * [Associated constants](https://rust-lang-nursery.github.io/edition-guide/rust-2018/trait-system/associated-constants.html)
 
-#![doc(html_root_url = "https://docs.rs/easy-ext/0.1.6")]
+#![doc(html_root_url = "https://docs.rs/easy-ext/0.1.7")]
 #![doc(test(
     no_crate_inject,
     attr(deny(warnings, rust_2018_idioms, single_use_lifetimes), allow(dead_code))

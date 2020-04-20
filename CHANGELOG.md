@@ -6,6 +6,12 @@ This project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.1.7] - 2020-04-20
+
+* [Supported unnamed extension trait.][9]
+
+[9]: https://github.com/taiki-e/easy-ext/pull/9
+
 ## [0.1.6] - 2019-10-12
 
 * [Improved error messages related to visibility.][5]
@@ -38,7 +44,8 @@ This project adheres to [Semantic Versioning](https://semver.org).
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.1.6...HEAD
+[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.1.7...HEAD
+[0.1.7]: https://github.com/taiki-e/easy-ext/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/taiki-e/easy-ext/compare/v0.1.5...v0.1.6
 [0.1.5]: https://github.com/taiki-e/easy-ext/compare/v0.1.4...v0.1.5
 [0.1.4]: https://github.com/taiki-e/easy-ext/compare/v0.1.3...v0.1.4
