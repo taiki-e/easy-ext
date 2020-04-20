@@ -16,7 +16,7 @@
 
 An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
 
-[**Documentation**](https://docs.rs/easy-ext/)
+[**Documentation**][docs-url]
 
 ## Usage
 
@@ -80,11 +80,7 @@ impl<T, E> Result<T, E> {
 }
 ```
 
-### Supported items
-
-* [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
-
-* [Associated constants](https://rust-lang-nursery.github.io/edition-guide/rust-2018/trait-system/associated-constants.html)
+See [API documentation][docs-url] for more details.
 
 ## License
 
