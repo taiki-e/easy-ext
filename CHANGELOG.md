@@ -6,6 +6,13 @@ This project adheres to [Semantic Versioning](https://semver.org).
 
 ## [Unreleased]
 
+## [0.2.0] - 2020-04-21
+
+* [`#[ext]` no longer adds type parameter, which is equivalent to `Self`, to the trait's generics.][15] See [#11][11] for more details.
+
+[11]: https://github.com/taiki-e/easy-ext/issues/11
+[15]: https://github.com/taiki-e/easy-ext/pull/15
+
 ## [0.1.8] - 2020-04-20
 
 * Improve documentation

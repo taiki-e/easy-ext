@@ -24,7 +24,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-easy-ext = "0.1"
+easy-ext = "0.2"
 ```
 
 The current easy-ext requires Rust 1.31 or later.
