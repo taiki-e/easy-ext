@@ -48,7 +48,7 @@
 #![warn(rust_2018_idioms, unreachable_pub)]
 // It cannot be included in the published code because these lints have false positives in the minimum required version.
 #![cfg_attr(test, warn(single_use_lifetimes))]
-#![warn(clippy::all)]
+#![warn(clippy::all, clippy::default_trait_access)]
 // mem::take requires Rust 1.40
 #![allow(clippy::mem_replace_with_default)]
 
@@ -60,7 +60,7 @@ use std::{collections::hash_map::DefaultHasher, hash::Hasher, mem};
 
 use proc_macro::TokenStream;
 use quote::{format_ident, ToTokens};
-use syn::{punctuated::Punctuated, visit_mut::VisitMut, *};
+use syn::{punctuated::Punctuated, visit_mut::VisitMut, Result, *};
 
 macro_rules! error {
     ($span:expr, $msg:expr) => {
@@ -179,7 +179,7 @@ pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
 
     let mut item: ItemImpl = syn::parse_macro_input!(input);
 
-    trait_from_item(&mut item, ext_ident)
+    trait_from_impl(&mut item, ext_ident)
         .map(ToTokens::into_token_stream)
         .map(|mut tokens| {
             tokens.extend(item.into_token_stream());
@@ -225,7 +225,7 @@ fn determine_trait_generics<'a>(generics: &mut Generics, self_ty: &'a Type) -> O
     None
 }
 
-fn trait_from_item(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
+fn trait_from_impl(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
     /// Replace `self_ty` with `Self`.
     struct ReplaceParam<'a> {
         self_ty: &'a Ident,
@@ -248,7 +248,7 @@ fn trait_from_item(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
     }
     let ty_generics = generics.split_for_impl().1;
     let trait_ = parse_quote!(#ident #ty_generics);
-    item.trait_ = Some((None, trait_, Default::default()));
+    item.trait_ = Some((None, trait_, token::For::default()));
 
     let mut vis = None;
     let mut items = Vec::with_capacity(item.items.len());
@@ -269,19 +269,19 @@ fn trait_from_item(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
         vis: vis.unwrap_or(Visibility::Inherited),
         unsafety: item.unsafety,
         auto_token: None,
-        trait_token: Default::default(),
+        trait_token: token::Trait::default(),
         ident,
         generics,
         colon_token: None,
         supertraits: Punctuated::new(),
-        brace_token: Default::default(),
+        brace_token: token::Brace::default(),
         items,
     })
 }
 
 fn trait_item_from_impl_item(
     impl_item: &mut ImplItem,
-    prev: &mut Option<Visibility>,
+    prev_vis: &mut Option<Visibility>,
 ) -> Result<TraitItem> {
     fn compare_visibility(x: &Visibility, y: &Visibility) -> bool {
         match (x, y) {
@@ -319,46 +319,35 @@ fn trait_item_from_impl_item(
     }
 
     match impl_item {
-        ImplItem::Const(item) => {
-            let vis = mem::replace(&mut item.vis, Visibility::Inherited);
-            check_visibility(vis, prev, &item.ident)?;
-            Ok(TraitItem::Const(from_const(item)))
+        ImplItem::Const(impl_const) => {
+            let vis = mem::replace(&mut impl_const.vis, Visibility::Inherited);
+            check_visibility(vis, prev_vis, &impl_const.ident)?;
+
+            Ok(TraitItem::Const(TraitItemConst {
+                attrs: impl_const.attrs.clone(),
+                const_token: token::Const::default(),
+                ident: impl_const.ident.clone(),
+                colon_token: token::Colon::default(),
+                ty: impl_const.ty.clone(),
+                default: None,
+                semi_token: token::Semi::default(),
+            }))
         }
-        ImplItem::Method(item) => {
-            let vis = mem::replace(&mut item.vis, Visibility::Inherited);
-            check_visibility(vis, prev, &item.sig.ident)?;
-            Ok(TraitItem::Method(from_method(item)))
+        ImplItem::Method(impl_method) => {
+            let vis = mem::replace(&mut impl_method.vis, Visibility::Inherited);
+            check_visibility(vis, prev_vis, &impl_method.sig.ident)?;
+
+            let mut attrs = impl_method.attrs.clone();
+            attrs.push(parse_quote!(#[allow(clippy::inline_fn_without_body)]));
+            Ok(TraitItem::Method(TraitItemMethod {
+                attrs,
+                sig: impl_method.sig.clone(),
+                default: None,
+                semi_token: Some(token::Semi::default()),
+            }))
         }
         _ => error!(impl_item, "unsupported item"),
     }
-}
-
-fn from_const(impl_const: &ImplItemConst) -> TraitItemConst {
-    TraitItemConst {
-        attrs: impl_const.attrs.clone(),
-        const_token: Default::default(),
-        ident: impl_const.ident.clone(),
-        colon_token: Default::default(),
-        ty: impl_const.ty.clone(),
-        default: None,
-        semi_token: Default::default(),
-    }
-}
-
-fn from_method(impl_method: &ImplItemMethod) -> TraitItemMethod {
-    let mut attrs = impl_method.attrs.clone();
-    find_remove(&mut attrs, "inline"); // clippy::inline_fn_without_body
-
-    TraitItemMethod {
-        attrs,
-        sig: impl_method.sig.clone(),
-        default: None,
-        semi_token: Some(Default::default()),
-    }
-}
-
-fn find_remove(attrs: &mut Vec<Attribute>, ident: &str) -> Option<Attribute> {
-    attrs.iter().position(|attr| attr.path.is_ident(ident)).map(|i| attrs.remove(i))
 }
 
 /// Returns the hash value of the input AST.
