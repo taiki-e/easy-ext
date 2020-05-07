@@ -56,11 +56,14 @@
 #[allow(unused_extern_crates)]
 extern crate proc_macro;
 
-use std::{collections::hash_map::DefaultHasher, hash::Hasher, mem};
-
 use proc_macro::TokenStream;
 use quote::{format_ident, ToTokens};
-use syn::{punctuated::Punctuated, visit_mut::VisitMut, Result, *};
+use std::{collections::hash_map::DefaultHasher, hash::Hasher, mem};
+use syn::{
+    parse_quote, punctuated::Punctuated, token, visit_mut::VisitMut, GenericParam, Generics, Ident,
+    ImplItem, ItemImpl, ItemTrait, PredicateType, Result, TraitItem, TraitItemConst,
+    TraitItemMethod, Type, TypeParam, TypePath, Visibility, WherePredicate,
+};
 
 macro_rules! error {
     ($span:expr, $msg:expr) => {
