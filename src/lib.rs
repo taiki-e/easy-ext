@@ -67,7 +67,7 @@ use syn::{
 
 macro_rules! error {
     ($span:expr, $msg:expr) => {
-        Err(syn::Error::new_spanned(&$span, $msg))
+        syn::Error::new_spanned(&$span, $msg)
     };
     ($span:expr, $($tt:tt)*) => {
         error!($span, format!($($tt)*))
@@ -308,13 +308,13 @@ fn trait_item_from_impl_item(
             Some(prev) if compare_visibility(prev, &current) => {}
             Some(prev) => {
                 if let Visibility::Inherited = prev {
-                    return error!(current, "All items must have inherited visibility");
+                    return Err(error!(current, "All items must have inherited visibility"));
                 } else {
-                    return error!(
+                    return Err(error!(
                         if let Visibility::Inherited = current { span } else { &current },
                         "All items must have a visibility of `{}`",
                         prev.to_token_stream(),
-                    );
+                    ));
                 }
             }
         }
@@ -349,7 +349,7 @@ fn trait_item_from_impl_item(
                 semi_token: Some(token::Semi::default()),
             }))
         }
-        _ => error!(impl_item, "unsupported item"),
+        _ => Err(error!(impl_item, "unsupported item")),
     }
 }
 
