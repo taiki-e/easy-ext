@@ -1,4 +1,4 @@
-//! An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
+//! An attribute macro for easily writing [extension trait pattern][rfc0445].
 //!
 //! # Examples
 //!
@@ -35,9 +35,70 @@
 //! }
 //! ```
 //!
-//! See [`ext`] attribute for more details.
+//! You can elide the trait name. Note that in this case, `#[ext]` assigns a random name, so you cannot import/export the generated trait.
 //!
-//! [`ext`]: attr.ext.html
+//! ```rust
+//! use easy_ext::ext;
+//!
+//! #[ext]
+//! impl<T, E> Result<T, E> {
+//!     fn err_into<U>(self) -> Result<T, U>
+//!     where
+//!         E: Into<U>,
+//!     {
+//!         self.map_err(Into::into)
+//!     }
+//! }
+//! ```
+//!
+//! ## Visibility
+//!
+//! * The visibility of the generated extension trait inherits the visibility of the item in the original `impl`.
+//!
+//! * The visibility of all the items in the original `impl` must be identical.
+//!
+//! ## [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
+//!
+//! If you want the extension trait to be a subtrait of another trait,
+//! add `Self: SubTrait` bound to the `where` clause.
+//!
+//! ```rust
+//! use easy_ext::ext;
+//!
+//! #[ext(Ext)]
+//! impl<T> T
+//! where
+//!     Self: Default,
+//! {
+//!     fn method(&self) {}
+//! }
+//! ```
+//!
+//! ## Supported items
+//!
+//! * [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
+//!
+//! ```rust
+//! use easy_ext::ext;
+//!
+//! #[ext(Ext)]
+//! impl<T> T {
+//!     fn method(&self) {}
+//! }
+//! ```
+//!
+//! * [Associated constants](https://rust-lang-nursery.github.io/edition-guide/rust-2018/trait-system/associated-constants.html)
+//!
+//! ```rust
+//! use easy_ext::ext;
+//!
+//! #[ext(Ext)]
+//! impl<T> T {
+//!     const MSG: &'static str = "Hello!";
+//! }
+//! ```
+//!
+//! [rfc0445]: https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md
 
 #![doc(html_root_url = "https://docs.rs/easy-ext/0.2.0")]
 #![doc(test(
@@ -74,105 +135,11 @@ macro_rules! error {
     };
 }
 
-/// An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
+/// An attribute macro for easily writing [extension trait pattern][rfc0445].
 ///
-/// # Examples
+/// See [crate level documentation](crate) for details.
 ///
-/// ```rust
-/// use easy_ext::ext;
-///
-/// #[ext(ResultExt)]
-/// impl<T, E> Result<T, E> {
-///     fn err_into<U>(self) -> Result<T, U>
-///     where
-///         E: Into<U>,
-///     {
-///         self.map_err(Into::into)
-///     }
-/// }
-/// ```
-///
-/// Code like this will be generated:
-///
-/// ```rust
-/// trait ResultExt<T, E> {
-///     fn err_into<U>(self) -> Result<T, U>
-///     where
-///         E: Into<U>;
-/// }
-///
-/// impl<T, E> ResultExt<T, E> for Result<T, E> {
-///     fn err_into<U>(self) -> Result<T, U>
-///     where
-///         E: Into<U>,
-///     {
-///         self.map_err(Into::into)
-///     }
-/// }
-/// ```
-///
-/// You can elide the trait name. Note that in this case, `#[ext]` assigns a random name, so you cannot import/export the generated trait.
-///
-/// ```rust
-/// use easy_ext::ext;
-///
-/// #[ext]
-/// impl<T, E> Result<T, E> {
-///     fn err_into<U>(self) -> Result<T, U>
-///     where
-///         E: Into<U>,
-///     {
-///         self.map_err(Into::into)
-///     }
-/// }
-/// ```
-///
-/// ## Visibility
-///
-/// * The generated extension trait inherits the visibility of the item in the original `impl`.
-///
-/// * The visibility of all the items in the original `impl` must be identical.
-///
-/// ## [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
-///
-/// If you want the extension trait to be a subtrait of another trait,
-/// add `Self: SubTrait` bound to the `where` clause.
-///
-/// ```rust
-/// use easy_ext::ext;
-///
-/// #[ext(Ext)]
-/// impl<T> T
-/// where
-///     Self: Default,
-/// {
-///     fn method(&self) {}
-/// }
-/// ```
-///
-/// ## Supported items
-///
-/// * [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
-///
-/// ```rust
-/// use easy_ext::ext;
-///
-/// #[ext(Ext)]
-/// impl<T> T {
-///     fn method(&self) {}
-/// }
-/// ```
-///
-/// * [Associated constants](https://rust-lang-nursery.github.io/edition-guide/rust-2018/trait-system/associated-constants.html)
-///
-/// ```rust
-/// use easy_ext::ext;
-///
-/// #[ext(Ext)]
-/// impl<T> T {
-///     const MSG: &'static str = "Hello!";
-/// }
-/// ```
+/// [rfc0445]: https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     let ext_ident = match syn::parse_macro_input!(args) {
@@ -214,7 +181,7 @@ fn determine_trait_generics<'a>(generics: &mut Generics, self_ty: &'a Type) -> O
                     generics.make_where_clause().predicates.push(WherePredicate::Type(
                         PredicateType {
                             lifetimes: None,
-                            bounded_ty: syn::parse_quote!(Self),
+                            bounded_ty: parse_quote!(Self),
                             colon_token,
                             bounds,
                         },

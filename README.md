@@ -62,6 +62,8 @@ impl<T, E> ResultExt<T, E> for Result<T, E> {
 }
 ```
 
+The visibility of the generated extension trait inherits the visibility of the item in the original `impl`.
+
 You can elide the trait name. Note that in this case, `#[ext]` assigns a random name, so you cannot import/export the generated trait.
 
 ```rust
