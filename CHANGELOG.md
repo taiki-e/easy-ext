@@ -15,7 +15,7 @@ This project adheres to [Semantic Versioning](https://semver.org).
 
 ## [0.1.8] - 2020-04-20
 
-* Improve documentation
+* Documentation improvements.
 
 ## [0.1.7] - 2020-04-20
 

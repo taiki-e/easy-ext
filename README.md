@@ -9,14 +9,12 @@
 [crates-url]: https://crates.io/crates/easy-ext
 [docs-badge]: https://docs.rs/easy-ext/badge.svg
 [docs-url]: https://docs.rs/easy-ext
-[license-badge]: https://img.shields.io/crates/l/easy-ext.svg
+[license-badge]: https://img.shields.io/badge/license-Apache--2.0%20OR%20MIT-blue.svg
 [license]: #license
 [rustc-badge]: https://img.shields.io/badge/rustc-1.31+-lightgray.svg
 [rustc-url]: https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html
 
 An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
-
-[**Documentation**][docs-url]
 
 ## Usage
 
@@ -80,7 +78,7 @@ impl<T, E> Result<T, E> {
 }
 ```
 
-See [API documentation][docs-url] for more details.
+See [documentation][docs-url] for more details.
 
 ## License
 

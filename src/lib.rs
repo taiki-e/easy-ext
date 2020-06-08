@@ -1,6 +1,6 @@
 //! An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
 //!
-//! ## Examples
+//! # Examples
 //!
 //! ```rust
 //! use easy_ext::ext;
@@ -76,7 +76,7 @@ macro_rules! error {
 
 /// An attribute macro for easily writing [extension trait pattern](https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md).
 ///
-/// ## Examples
+/// # Examples
 ///
 /// ```rust
 /// use easy_ext::ext;
@@ -127,13 +127,13 @@ macro_rules! error {
 /// }
 /// ```
 ///
-/// ### Visibility
+/// ## Visibility
 ///
 /// * The generated extension trait inherits the visibility of the item in the original `impl`.
 ///
 /// * The visibility of all the items in the original `impl` must be identical.
 ///
-/// ### [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
+/// ## [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
 ///
 /// If you want the extension trait to be a subtrait of another trait,
 /// add `Self: SubTrait` bound to the `where` clause.
@@ -150,7 +150,7 @@ macro_rules! error {
 /// }
 /// ```
 ///
-/// ### Supported items
+/// ## Supported items
 ///
 /// * [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
 ///
