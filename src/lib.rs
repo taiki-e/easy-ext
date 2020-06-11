@@ -136,8 +136,7 @@ macro_rules! error {
 }
 
 /// An attribute macro for easily writing [extension trait pattern][rfc0445].
-///
-/// See [crate level documentation](crate) for details.
+/// See crate level documentation for details.
 ///
 /// [rfc0445]: https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md
 #[proc_macro_attribute]
