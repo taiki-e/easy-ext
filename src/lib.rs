@@ -218,7 +218,7 @@ fn trait_from_impl(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
     }
     let ty_generics = generics.split_for_impl().1;
     let trait_ = parse_quote!(#ident #ty_generics);
-    item.trait_ = Some((None, trait_, token::For::default()));
+    item.trait_ = Some((None, trait_, <Token![for]>::default()));
 
     let mut vis = None;
     let mut items = Vec::with_capacity(item.items.len());
@@ -239,7 +239,7 @@ fn trait_from_impl(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
         vis: vis.unwrap_or(Visibility::Inherited),
         unsafety: item.unsafety,
         auto_token: None,
-        trait_token: token::Trait::default(),
+        trait_token: <Token![trait]>::default(),
         ident,
         generics,
         colon_token: None,
@@ -295,12 +295,12 @@ fn trait_item_from_impl_item(
 
             Ok(TraitItem::Const(TraitItemConst {
                 attrs: impl_const.attrs.clone(),
-                const_token: token::Const::default(),
+                const_token: <Token![const]>::default(),
                 ident: impl_const.ident.clone(),
-                colon_token: token::Colon::default(),
+                colon_token: <Token![:]>::default(),
                 ty: impl_const.ty.clone(),
                 default: None,
-                semi_token: token::Semi::default(),
+                semi_token: <Token![;]>::default(),
             }))
         }
         ImplItem::Method(impl_method) => {
@@ -313,7 +313,7 @@ fn trait_item_from_impl_item(
                 attrs,
                 sig: impl_method.sig.clone(),
                 default: None,
-                semi_token: Some(token::Semi::default()),
+                semi_token: Some(<Token![;]>::default()),
             }))
         }
         _ => Err(error!(impl_item, "unsupported item")),
