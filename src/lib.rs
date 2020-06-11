@@ -122,7 +122,7 @@ use quote::{format_ident, ToTokens};
 use std::{collections::hash_map::DefaultHasher, hash::Hasher, mem};
 use syn::{
     parse_quote, punctuated::Punctuated, token, visit_mut::VisitMut, GenericParam, Generics, Ident,
-    ImplItem, ItemImpl, ItemTrait, PredicateType, Result, TraitItem, TraitItemConst,
+    ImplItem, ItemImpl, ItemTrait, PredicateType, Result, Token, TraitItem, TraitItemConst,
     TraitItemMethod, Type, TypeParam, TypePath, Visibility, WherePredicate,
 };
 
