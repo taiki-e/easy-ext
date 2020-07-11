@@ -62,8 +62,6 @@ impl<T, E> ResultExt<T, E> for Result<T, E> {
 }
 ```
 
-The visibility of the generated extension trait inherits the visibility of the item in the original `impl`.
-
 You can elide the trait name. Note that in this case, `#[ext]` assigns a random name, so you cannot import/export the generated trait.
 
 ```rust
@@ -72,6 +70,26 @@ use easy_ext::ext;
 #[ext]
 impl<T, E> Result<T, E> {
     fn err_into<U>(self) -> Result<T, U>
+    where
+        E: Into<U>,
+    {
+        self.map_err(Into::into)
+    }
+}
+```
+
+### Visibility
+
+The visibility of the generated extension trait inherits the visibility of the item in the original `impl`.
+
+For example, if the method is `pub` then the trait will also be `pub`:
+
+```rust
+use easy_ext::ext;
+
+#[ext(ResultExt)] // generate `pub trait ResultExt`
+impl<T, E> Result<T, E> {
+    pub fn err_into<U>(self) -> Result<T, U>
     where
         E: Into<U>,
     {

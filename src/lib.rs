@@ -55,6 +55,22 @@
 //!
 //! * The visibility of the generated extension trait inherits the visibility of the item in the original `impl`.
 //!
+//!   For example, if the method is `pub` then the trait will also be `pub`:
+//!
+//!   ```rust
+//!   use easy_ext::ext;
+//!
+//!   #[ext(ResultExt)] // generate `pub trait ResultExt`
+//!   impl<T, E> Result<T, E> {
+//!       pub fn err_into<U>(self) -> Result<T, U>
+//!       where
+//!           E: Into<U>,
+//!       {
+//!           self.map_err(Into::into)
+//!       }
+//!   }
+//!   ```
+//!
 //! * The visibility of all the items in the original `impl` must be identical.
 //!
 //! ## [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
