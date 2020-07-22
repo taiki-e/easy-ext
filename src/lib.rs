@@ -116,7 +116,7 @@
 //!
 //! [rfc0445]: https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md
 
-#![doc(html_root_url = "https://docs.rs/easy-ext/0.2.1")]
+#![doc(html_root_url = "https://docs.rs/easy-ext/0.2.2")]
 #![doc(test(
     no_crate_inject,
     attr(deny(warnings, rust_2018_idioms, single_use_lifetimes), allow(dead_code))
