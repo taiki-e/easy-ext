@@ -310,12 +310,12 @@ fn trait_item_from_impl_item(
 
             Ok(TraitItem::Const(TraitItemConst {
                 attrs: impl_const.attrs.clone(),
-                const_token: <Token![const]>::default(),
+                const_token: impl_const.const_token,
                 ident: impl_const.ident.clone(),
-                colon_token: <Token![:]>::default(),
+                colon_token: impl_const.colon_token,
                 ty: impl_const.ty.clone(),
                 default: None,
-                semi_token: <Token![;]>::default(),
+                semi_token: impl_const.semi_token,
             }))
         }
         ImplItem::Method(impl_method) => {
@@ -328,7 +328,7 @@ fn trait_item_from_impl_item(
                 attrs,
                 sig: impl_method.sig.clone(),
                 default: None,
-                semi_token: Some(<Token![;]>::default()),
+                semi_token: Some(Token![;](impl_method.block.brace_token.span)),
             }))
         }
         _ => Err(error!(impl_item, "unsupported item")),
