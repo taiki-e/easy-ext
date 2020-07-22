@@ -137,9 +137,9 @@ use proc_macro::TokenStream;
 use quote::{format_ident, ToTokens};
 use std::{collections::hash_map::DefaultHasher, hash::Hasher, mem};
 use syn::{
-    parse_quote, punctuated::Punctuated, token, visit_mut::VisitMut, GenericParam, Generics, Ident,
-    ImplItem, ItemImpl, ItemTrait, PredicateType, Result, Token, TraitItem, TraitItemConst,
-    TraitItemMethod, Type, TypeParam, TypePath, Visibility, WherePredicate,
+    parse_quote, punctuated::Punctuated, token, visit_mut::VisitMut, Attribute, GenericParam,
+    Generics, Ident, ImplItem, ItemImpl, ItemTrait, PredicateType, Result, Token, TraitItem,
+    TraitItemConst, TraitItemMethod, Type, TypeParam, TypePath, Visibility, WherePredicate,
 };
 
 macro_rules! error {
@@ -323,7 +323,7 @@ fn trait_item_from_impl_item(
             check_visibility(vis, prev_vis, &impl_method.sig.ident)?;
 
             let mut attrs = impl_method.attrs.clone();
-            attrs.push(parse_quote!(#[allow(clippy::inline_fn_without_body)]));
+            find_remove(&mut attrs, "inline"); // `#[inline]` is ignored on function prototypes
             Ok(TraitItem::Method(TraitItemMethod {
                 attrs,
                 sig: impl_method.sig.clone(),
@@ -333,6 +333,10 @@ fn trait_item_from_impl_item(
         }
         _ => Err(error!(impl_item, "unsupported item")),
     }
+}
+
+fn find_remove(attrs: &mut Vec<Attribute>, ident: &str) -> Option<Attribute> {
+    attrs.iter().position(|attr| attr.path.is_ident(ident)).map(|i| attrs.remove(i))
 }
 
 /// Returns the hash value of the input AST.

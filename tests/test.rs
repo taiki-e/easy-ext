@@ -143,3 +143,16 @@ fn trait_generics() {
 
     a(A::INIT);
 }
+
+#[test]
+fn inline() {
+    #[ext]
+    impl str {
+        #[inline]
+        fn auto(&self) {}
+        #[inline(always)]
+        fn always(&self) {}
+        #[inline(never)]
+        fn never(&self) {}
+    }
+}
