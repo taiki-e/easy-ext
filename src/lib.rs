@@ -247,6 +247,7 @@ fn trait_from_impl(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
     })?;
 
     let mut attrs = item.attrs.clone();
+    find_remove(&mut item.attrs, "doc"); // https://github.com/taiki-e/easy-ext/issues/20
     attrs.push(parse_quote!(#[allow(patterns_in_fns_without_body)])); // mut self
 
     Ok(ItemTrait {
@@ -308,8 +309,10 @@ fn trait_item_from_impl_item(
             let vis = mem::replace(&mut impl_const.vis, Visibility::Inherited);
             check_visibility(vis, prev_vis, &impl_const.ident)?;
 
+            let attrs = impl_const.attrs.clone();
+            find_remove(&mut impl_const.attrs, "doc"); // https://github.com/taiki-e/easy-ext/issues/20
             Ok(TraitItem::Const(TraitItemConst {
-                attrs: impl_const.attrs.clone(),
+                attrs,
                 const_token: impl_const.const_token,
                 ident: impl_const.ident.clone(),
                 colon_token: impl_const.colon_token,
@@ -323,6 +326,7 @@ fn trait_item_from_impl_item(
             check_visibility(vis, prev_vis, &impl_method.sig.ident)?;
 
             let mut attrs = impl_method.attrs.clone();
+            find_remove(&mut impl_method.attrs, "doc"); // https://github.com/taiki-e/easy-ext/issues/20
             find_remove(&mut attrs, "inline"); // `#[inline]` is ignored on function prototypes
             Ok(TraitItem::Method(TraitItemMethod {
                 attrs,
@@ -335,8 +339,10 @@ fn trait_item_from_impl_item(
     }
 }
 
-fn find_remove(attrs: &mut Vec<Attribute>, ident: &str) -> Option<Attribute> {
-    attrs.iter().position(|attr| attr.path.is_ident(ident)).map(|i| attrs.remove(i))
+fn find_remove(attrs: &mut Vec<Attribute>, ident: &str) {
+    while let Some(i) = attrs.iter().position(|attr| attr.path.is_ident(ident)) {
+        attrs.remove(i);
+    }
 }
 
 /// Returns the hash value of the input AST.

@@ -154,5 +154,8 @@ fn inline() {
         fn always(&self) {}
         #[inline(never)]
         fn never(&self) {}
+        #[inline]
+        #[inline]
+        fn multiple(&self) {}
     }
 }
