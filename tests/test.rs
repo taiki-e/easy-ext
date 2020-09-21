@@ -11,7 +11,7 @@ fn simple() {
         }
     }
 
-    assert_eq!("--".foo("-").as_str(), "__");
+    assert_eq!("--".foo("-"), "__");
 }
 
 #[test]
@@ -103,8 +103,8 @@ mod bar {
 fn visibility() {
     use self::bar::{baz::StrExt3, StrExt};
 
-    assert_eq!("--".foo("-").as_str(), "__");
-    assert_eq!("--".baz("-").as_str(), "__");
+    assert_eq!("--".foo("-"), "__");
+    assert_eq!("--".baz("-"), "__");
 }
 
 #[allow(clippy::declare_interior_mutable_const)]
