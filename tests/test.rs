@@ -42,18 +42,6 @@ fn lifetime() {
     let _: Option<&u8> = (&mut Some(1)).into_ref();
 }
 
-#[test]
-fn generics() {
-    #[ext(IterExt)]
-    impl<I: IntoIterator> I {
-        fn _next(self) -> Option<I::Item> {
-            self.into_iter().next()
-        }
-    }
-
-    assert_eq!(vec![1, 2, 3]._next(), Some(1u8));
-}
-
 /*
 
 ## Visibility
@@ -107,7 +95,18 @@ fn visibility() {
     assert_eq!("--".baz("-"), "__");
 }
 
-#[allow(clippy::declare_interior_mutable_const)]
+#[test]
+fn generics() {
+    #[ext(IterExt)]
+    impl<I: IntoIterator> I {
+        fn _next(self) -> Option<I::Item> {
+            self.into_iter().next()
+        }
+    }
+
+    assert_eq!(vec![1, 2, 3]._next(), Some(1_u8));
+}
+
 #[test]
 fn trait_generics() {
     #[derive(Debug, PartialEq, Eq)]
@@ -122,26 +121,34 @@ fn trait_generics() {
 
     #[ext(ConstInit)]
     impl A {
-        const INIT: Self = A {};
+        const INIT: Self = Self {};
+        const INIT2: A = A {};
     }
 
     #[ext(Ext)]
     impl<I: Iterator + ConstInit> I {
-        const CONST: I = I::INIT;
-        fn method(mut self) -> Option<I::Item> {
+        const CONST: Self = Self::INIT;
+        const CONST2: I = I::INIT;
+        fn method(mut self) -> Option<Self::Item> {
+            self.next()
+        }
+        fn method2(mut self) -> Option<I::Item> {
             self.next()
         }
     }
 
-    assert_eq!(A {}.method(), None);
-
     fn a<T: Ext + Eq + std::fmt::Debug>(mut x: T) {
         let y = T::CONST;
+        let _ = T::CONST2;
         assert_eq!(x, y);
         assert!(x.next().is_none());
     }
 
+    assert_eq!(A {}.method(), None);
+    assert_eq!(A {}.method2(), None);
+
     a(A::INIT);
+    a(A::INIT2);
 }
 
 #[test]
