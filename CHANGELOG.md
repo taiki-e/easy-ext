@@ -63,11 +63,15 @@ This project adheres to [Semantic Versioning](https://semver.org).
 
 * Fixed some bugs related to generics.
 
-## [0.1.1] - 2019-02-21 - YANKED
+## [0.1.1] - 2019-02-21
+
+**Note: This release has been yanked.**
 
 * Fixed an error related to generics.
 
-## [0.1.0] - 2019-02-20 - YANKED
+## [0.1.0] - 2019-02-20
+
+**Note: This release has been yanked.**
 
 Initial release
 
