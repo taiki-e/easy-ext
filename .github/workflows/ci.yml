@@ -34,13 +34,13 @@ jobs:
       - uses: actions/checkout@v2
       - name: Install Rust
         run: ci/install-rust.sh ${{ matrix.rust }}
-      - if: matrix.rust == 'nightly'
+      - if: startsWith(matrix.rust, 'nightly')
         run: cargo install cargo-hack
       - if: matrix.rust == '1.31.0'
         run: cargo check
       - if: matrix.rust != '1.31.0'
-        run: cargo test
-      - if: matrix.rust == 'nightly'
+        run: cargo test --all
+      - if: startsWith(matrix.rust, 'nightly')
         run: bash scripts/check-minimal-versions.sh
 
   clippy:
