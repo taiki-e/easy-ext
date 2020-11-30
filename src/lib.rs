@@ -103,7 +103,7 @@
 //! }
 //! ```
 //!
-//! * [Associated constants](https://rust-lang-nursery.github.io/edition-guide/rust-2018/trait-system/associated-constants.html)
+//! * [Associated constants](https://doc.rust-lang.org/edition-guide/rust-2018/trait-system/associated-constants.html)
 //!
 //! ```rust
 //! use easy_ext::ext;
@@ -158,6 +158,7 @@ macro_rules! error {
 }
 
 /// An attribute macro for easily writing [extension trait pattern][rfc0445].
+///
 /// See crate level documentation for details.
 ///
 /// [rfc0445]: https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md
