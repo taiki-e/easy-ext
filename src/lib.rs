@@ -35,7 +35,8 @@
 //! }
 //! ```
 //!
-//! You can elide the trait name. Note that in this case, `#[ext]` assigns a random name, so you cannot import/export the generated trait.
+//! You can elide the trait name. Note that in this case, `#[ext]` assigns a
+//! random name, so you cannot import/export the generated trait.
 //!
 //! ```rust
 //! use easy_ext::ext;
@@ -53,7 +54,8 @@
 //!
 //! ## Visibility
 //!
-//! * The visibility of the generated extension trait inherits the visibility of the item in the original `impl`.
+//! * The visibility of the generated extension trait inherits the visibility of
+//!   the item in the original `impl`.
 //!
 //!   For example, if the method is `pub` then the trait will also be `pub`:
 //!
