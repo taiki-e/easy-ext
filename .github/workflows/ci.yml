@@ -97,6 +97,7 @@ jobs:
     if: github.event_name == 'push' && success()
     needs:
       - test
+      - build
       - clippy
       - rustfmt
       - rustdoc
@@ -110,6 +111,7 @@ jobs:
     if: github.event_name == 'push' && !success()
     needs:
       - test
+      - build
       - clippy
       - rustfmt
       - rustdoc
