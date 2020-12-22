@@ -127,8 +127,6 @@
 // It cannot be included in the published code because these lints have false positives in the minimum required version.
 #![cfg_attr(test, warn(single_use_lifetimes))]
 #![warn(clippy::all, clippy::default_trait_access)]
-// mem::take requires Rust 1.40
-#![allow(clippy::mem_replace_with_default)]
 
 // older compilers require explicit `extern crate`.
 #[allow(unused_extern_crates)]
@@ -221,7 +219,7 @@ fn trait_from_impl(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
     impl VisitMut for ReplaceParam<'_> {
         fn visit_ident_mut(&mut self, ident: &mut Ident) {
             if *ident == *self.self_ty {
-                *ident = format_ident!("Self", span = ident.span());
+                *ident = Ident::new("Self", ident.span());
             }
         }
     }
