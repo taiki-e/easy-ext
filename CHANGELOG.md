@@ -8,66 +8,66 @@ This project adheres to [Semantic Versioning](https://semver.org).
 
 ## [0.2.3] - 2020-08-24
 
-* [Documentation (`#[doc]` attributes) is now generated only for trait definitions.](https://github.com/taiki-e/easy-ext/pull/23) Previously it generated for both trait definition and trait implementation. See [#20](https://github.com/taiki-e/easy-ext/issues/20) for more details.
+- [Documentation (`#[doc]` attributes) is now generated only for trait definitions.](https://github.com/taiki-e/easy-ext/pull/23) Previously it generated for both trait definition and trait implementation. See [#20](https://github.com/taiki-e/easy-ext/issues/20) for more details.
 
 ## [0.2.2] - 2020-07-22
 
-* [Fix `unused_attributes` lint in generated code.][22]
+- [Fix `unused_attributes` lint in generated code.][22]
 
-* Diagnostic improvements.
+- Diagnostic improvements.
 
 [22]: https://github.com/taiki-e/easy-ext/pull/22
 
 ## [0.2.1] - 2020-07-11
 
-* Documentation improvements.
+- Documentation improvements.
 
 ## [0.2.0] - 2020-04-22
 
-* [`#[ext]` no longer adds type parameter, which is equivalent to `Self`, to the trait's generics.][15] See [#11][11] for more details.
+- [`#[ext]` no longer adds type parameter, which is equivalent to `Self`, to the trait's generics.][15] See [#11][11] for more details.
 
 [11]: https://github.com/taiki-e/easy-ext/issues/11
 [15]: https://github.com/taiki-e/easy-ext/pull/15
 
 ## [0.1.8] - 2020-04-20
 
-* Documentation improvements.
+- Documentation improvements.
 
 ## [0.1.7] - 2020-04-20
 
-* [Supported unnamed extension trait.][9]
+- [Supported unnamed extension trait.][9]
 
 [9]: https://github.com/taiki-e/easy-ext/pull/9
 
 ## [0.1.6] - 2019-10-12
 
-* [Improved error messages related to visibility.][5]
+- [Improved error messages related to visibility.][5]
 
 [5]: https://github.com/taiki-e/easy-ext/pull/5
 
 ## [0.1.5] - 2019-08-15
 
-* Updated `syn` and `quote` to 1.0.
+- Updated `syn` and `quote` to 1.0.
 
 ## [0.1.4] - 2019-03-10
 
-* Updated minimum `syn` version to 0.15.29.
+- Updated minimum `syn` version to 0.15.29.
 
 ## [0.1.3] - 2019-02-21
 
-* Removed `inline` attributes on trait method side. It can avoid [`clippy::inline_fn_without_body`](https://rust-lang.github.io/rust-clippy/master/index.html#inline_fn_without_body) by this.
+- Removed `inline` attributes on trait method side. It can avoid [`clippy::inline_fn_without_body`](https://rust-lang.github.io/rust-clippy/master/index.html#inline_fn_without_body) by this.
 
 ## [0.1.2] - 2019-02-21
 
-* Used `#[allow(patterns_in_fns_without_body)]` to generated extension trait.
+- Used `#[allow(patterns_in_fns_without_body)]` to generated extension trait.
 
-* Fixed some bugs related to generics.
+- Fixed some bugs related to generics.
 
 ## [0.1.1] - 2019-02-21
 
 **Note: This release has been yanked.**
 
-* Fixed an error related to generics.
+- Fixed an error related to generics.
 
 ## [0.1.0] - 2019-02-20
 
@@ -75,7 +75,7 @@ This project adheres to [Semantic Versioning](https://semver.org).
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.2.3...HEAD
+[unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.2.3...HEAD
 [0.2.3]: https://github.com/taiki-e/easy-ext/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/taiki-e/easy-ext/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/taiki-e/easy-ext/compare/v0.2.0...v0.2.1
