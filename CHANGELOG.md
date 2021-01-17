@@ -24,11 +24,9 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.2.2] - 2020-07-22
 
-- [Fix `unused_attributes` lint in generated code.][22]
+- [Fix `unused_attributes` lint in generated code.](https://github.com/taiki-e/easy-ext/pull/22)
 
 - Diagnostic improvements.
-
-[22]: https://github.com/taiki-e/easy-ext/pull/22
 
 ## [0.2.1] - 2020-07-11
 
@@ -36,10 +34,7 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.2.0] - 2020-04-22
 
-- [`#[ext]` no longer adds type parameter, which is equivalent to `Self`, to the trait's generics.][15] See [#11][11] for more details.
-
-[11]: https://github.com/taiki-e/easy-ext/issues/11
-[15]: https://github.com/taiki-e/easy-ext/pull/15
+- [`#[ext]` no longer adds type parameter, which is equivalent to `Self`, to the trait's generics.](https://github.com/taiki-e/easy-ext/pull/15) See [#11](https://github.com/taiki-e/easy-ext/issues/11) for more details.
 
 ## [0.1.8] - 2020-04-20
 
@@ -47,15 +42,11 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.1.7] - 2020-04-20
 
-- [Supported unnamed extension trait.][9]
-
-[9]: https://github.com/taiki-e/easy-ext/pull/9
+- [Supported unnamed extension trait.](https://github.com/taiki-e/easy-ext/pull/9)
 
 ## [0.1.6] - 2019-10-12
 
-- [Improved error messages related to visibility.][5]
-
-[5]: https://github.com/taiki-e/easy-ext/pull/5
+- [Improved error messages related to visibility.](https://github.com/taiki-e/easy-ext/pull/5)
 
 ## [0.1.5] - 2019-08-15
 
