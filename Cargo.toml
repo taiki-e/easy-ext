@@ -24,7 +24,7 @@ proc-macro = true
 
 [dependencies]
 quote = "1"
-syn = { version = "1.0.3", features = ["full", "visit-mut"] }
+syn = { version = "1.0.56", features = ["full", "visit-mut"] }
 
 [dev-dependencies]
 rustversion = "1"

@@ -55,26 +55,57 @@ fn lifetime() {
 mod bar {
     use easy_ext::ext;
 
+    // assoc-item-level visibility + named
     #[ext(StrExt)]
     impl str {
-        pub const FOO: &'static str = "_";
+        pub const FOO1: &'static str = "_";
 
-        pub fn foo(&self, pat: &str) -> String {
-            self.replace(pat, Self::FOO)
+        pub fn foo1(&self, pat: &str) -> String {
+            self.replace(pat, Self::FOO1)
+        }
+    }
+
+    // assoc-item-level visibility + unnamed
+    #[ext]
+    impl str {
+        pub const FOO2: &'static str = "_";
+
+        pub fn foo2(&self, pat: &str) -> String {
+            self.replace(pat, Self::FOO2)
+        }
+    }
+
+    // impl-level visibility + named
+    #[ext(pub StrExt2)]
+    impl str {
+        const FOO3: &'static str = "_";
+
+        fn foo3(&self, pat: &str) -> String {
+            self.replace(pat, Self::FOO3)
+        }
+    }
+
+    // impl-level visibility + unnamed
+    #[ext(pub)]
+    impl str {
+        const FOO4: &'static str = "_";
+
+        fn foo4(&self, pat: &str) -> String {
+            self.replace(pat, Self::FOO4)
         }
     }
 
     pub(super) mod baz {
         use easy_ext::ext;
 
-        #[ext(StrExt)]
+        #[ext(StrExt3)]
         impl str {
             pub(super) fn bar(&self, pat: &str) -> String {
                 self.replace(pat, "_")
             }
         }
 
-        #[ext(StrExt3)]
+        #[ext(StrExt4)]
         impl str {
             pub fn baz(&self, pat: &str) -> String {
                 self.replace(pat, "_")
@@ -84,15 +115,40 @@ mod bar {
                 self.replace(pat, "-")
             }
         }
+
+        #[ext(pub(super) StrExt5)]
+        impl str {
+            fn bar2(&self, pat: &str) -> String {
+                self.replace(pat, "_")
+            }
+        }
+
+        #[ext(pub StrExt6)]
+        impl str {
+            fn baz3(&self, pat: &str) -> String {
+                self.replace(pat, "_")
+            }
+
+            fn baz4(&self, pat: &str) -> String {
+                self.replace(pat, "-")
+            }
+        }
     }
 }
 
 #[test]
 fn visibility() {
-    use self::bar::{baz::StrExt3, StrExt};
+    use self::bar::{
+        baz::{StrExt4, StrExt6},
+        StrExt, StrExt2,
+    };
 
-    assert_eq!("--".foo("-"), "__");
-    assert_eq!("--".baz("-"), "__");
+    assert_eq!("..".foo1("."), "__");
+    assert_eq!("..".foo3("."), "__");
+    assert_eq!("..".baz("."), "__");
+    assert_eq!("..".baz2("."), "--");
+    assert_eq!("..".baz3("."), "__");
+    assert_eq!("..".baz4("."), "--");
 }
 
 #[test]

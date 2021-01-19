@@ -54,8 +54,7 @@ impl<T, E> ResultExt<T, E> for Result<T, E> {
 }
 ```
 
-You can elide the trait name. Note that in this case, `#[ext]` assigns a
-random name, so you cannot import/export the generated trait.
+You can elide the trait name.
 
 ```rust
 use easy_ext::ext;
@@ -71,10 +70,37 @@ impl<T, E> Result<T, E> {
 }
 ```
 
+Note that in this case, `#[ext]` assigns a random name, so you cannot
+import/export the generated trait.
+
 ### Visibility
 
-The visibility of the generated extension trait inherits the visibility of
-the item in the original `impl`.
+There are two ways to specify visibility.
+
+#### Impl-level visibility
+
+The first way is to specify visibility as the first argument to the `#[ext]`
+attribute. For example:
+
+```rust
+use easy_ext::ext;
+
+// unnamed
+#[ext(pub)]
+impl str {
+    fn foo(&self) {}
+}
+
+// named
+#[ext(pub StrExt)]
+impl str {
+    fn bar(&self) {}
+}
+```
+
+#### Associated-item-level visibility
+
+Another way is to specify visibility at the associated item level.
 
 For example, if the method is `pub` then the trait will also be `pub`:
 
@@ -92,7 +118,52 @@ impl<T, E> Result<T, E> {
 }
 ```
 
-See [documentation](https://docs.rs/easy-ext) for more details.
+This is useful when migrate from an inherent impl to an extension trait.
+
+Note that the visibility of all the associated items in the `impl` must be identical.
+
+Note that you cannot specify impl-level visibility and associated-item-level visibility at the same time.
+
+### [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
+
+If you want the extension trait to be a subtrait of another trait,
+add `Self: SubTrait` bound to the `where` clause.
+
+```rust
+use easy_ext::ext;
+
+#[ext(Ext)]
+impl<T> T
+where
+    Self: Default,
+{
+    fn method(&self) {}
+}
+```
+
+### Supported items
+
+#### [Associated functions (methods)](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
+
+```rust
+use easy_ext::ext;
+
+#[ext(Ext)]
+impl<T> T {
+    fn method(&self) {}
+}
+```
+
+#### [Associated constants](https://doc.rust-lang.org/edition-guide/rust-2018/trait-system/associated-constants.html)
+
+```rust
+use easy_ext::ext;
+
+#[ext(Ext)]
+impl<T> T {
+    const MSG: &'static str = "Hello!";
+}
+```
 
 [rfc0445]: https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md
 
