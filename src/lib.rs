@@ -35,8 +35,7 @@
 //! }
 //! ```
 //!
-//! You can elide the trait name. Note that in this case, `#[ext]` assigns a
-//! random name, so you cannot import/export the generated trait.
+//! You can elide the trait name.
 //!
 //! ```rust
 //! use easy_ext::ext;
@@ -52,28 +51,59 @@
 //! }
 //! ```
 //!
+//! Note that in this case, `#[ext]` assigns a random name, so you cannot
+//! import/export the generated trait.
+//!
 //! ## Visibility
 //!
-//! * The visibility of the generated extension trait inherits the visibility of
-//!   the item in the original `impl`.
+//! There are two ways to specify visibility.
 //!
-//!   For example, if the method is `pub` then the trait will also be `pub`:
+//! ### Impl-level visibility
 //!
-//!   ```rust
-//!   use easy_ext::ext;
+//! The first way is to specify visibility as the first argument to the `#[ext]`
+//! attribute. For example:
 //!
-//!   #[ext(ResultExt)] // generate `pub trait ResultExt`
-//!   impl<T, E> Result<T, E> {
-//!       pub fn err_into<U>(self) -> Result<T, U>
-//!       where
-//!           E: Into<U>,
-//!       {
-//!           self.map_err(Into::into)
-//!       }
-//!   }
-//!   ```
+//! ```rust
+//! use easy_ext::ext;
 //!
-//! * The visibility of all the items in the original `impl` must be identical.
+//! // unnamed
+//! #[ext(pub)]
+//! impl str {
+//!     fn foo(&self) {}
+//! }
+//!
+//! // named
+//! #[ext(pub StrExt)]
+//! impl str {
+//!     fn bar(&self) {}
+//! }
+//! ```
+//!
+//! ### Associated-item-level visibility
+//!
+//! Another way is to specify visibility at the associated item level.
+//!
+//! For example, if the method is `pub` then the trait will also be `pub`:
+//!
+//! ```rust
+//! use easy_ext::ext;
+//!
+//! #[ext(ResultExt)] // generate `pub trait ResultExt`
+//! impl<T, E> Result<T, E> {
+//!     pub fn err_into<U>(self) -> Result<T, U>
+//!     where
+//!         E: Into<U>,
+//!     {
+//!         self.map_err(Into::into)
+//!     }
+//! }
+//! ```
+//!
+//! This is useful when migrate from an inherent impl to an extension trait.
+//!
+//! Note that the visibility of all the associated items in the `impl` must be identical.
+//!
+//! Note that you cannot specify impl-level visibility and associated-item-level visibility at the same time.
 //!
 //! ## [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
 //!
@@ -94,7 +124,7 @@
 //!
 //! ## Supported items
 //!
-//! * [Methods](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
+//! ### [Associated functions (methods)](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
 //!
 //! ```rust
 //! use easy_ext::ext;
@@ -105,7 +135,7 @@
 //! }
 //! ```
 //!
-//! * [Associated constants](https://doc.rust-lang.org/edition-guide/rust-2018/trait-system/associated-constants.html)
+//! ### [Associated constants](https://doc.rust-lang.org/edition-guide/rust-2018/trait-system/associated-constants.html)
 //!
 //! ```rust
 //! use easy_ext::ext;
@@ -139,9 +169,14 @@ use proc_macro::TokenStream;
 use quote::{format_ident, ToTokens};
 use std::{collections::hash_map::DefaultHasher, hash::Hasher, mem};
 use syn::{
-    parse_quote, punctuated::Punctuated, token, visit_mut::VisitMut, Attribute, GenericParam,
-    Generics, Ident, ImplItem, ItemImpl, ItemTrait, PredicateType, Result, Token, TraitItem,
-    TraitItemConst, TraitItemMethod, Type, TypeParam, TypePath, Visibility, WherePredicate,
+    parse::{Parse, ParseStream},
+    parse_quote,
+    punctuated::Punctuated,
+    token,
+    visit_mut::VisitMut,
+    Attribute, Error, GenericParam, Generics, Ident, ImplItem, ItemImpl, ItemTrait, PredicateType,
+    Result, Token, TraitItem, TraitItemConst, TraitItemMethod, Type, TypeParam, TypePath,
+    Visibility, WherePredicate,
 };
 
 macro_rules! error {
@@ -160,21 +195,36 @@ macro_rules! error {
 /// [rfc0445]: https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
-    let ext_ident = match syn::parse_macro_input!(args) {
-        None => format_ident!("__ExtTrait{}", hash(&input)),
-        Some(ext_ident) => ext_ident,
-    };
+    let mut args: Args = syn::parse_macro_input!(args);
+    if args.name.is_none() {
+        args.name = Some(format_ident!("__ExtTrait{}", hash(&input)));
+    }
 
     let mut item: ItemImpl = syn::parse_macro_input!(input);
 
-    trait_from_impl(&mut item, ext_ident)
+    trait_from_impl(&mut item, args)
         .map(ToTokens::into_token_stream)
         .map(|mut tokens| {
             tokens.extend(item.into_token_stream());
             tokens
         })
-        .unwrap_or_else(|e| e.to_compile_error())
+        .unwrap_or_else(Error::into_compile_error)
         .into()
+}
+
+struct Args {
+    // impl-level visibility
+    vis: Option<Visibility>,
+    // trait name
+    name: Option<Ident>,
+}
+
+impl Parse for Args {
+    fn parse(input: ParseStream<'_>) -> Result<Self> {
+        let vis: Visibility = input.parse()?;
+        let name: Option<Ident> = input.parse()?;
+        Ok(Args { vis: if let Visibility::Inherited = vis { None } else { Some(vis) }, name })
+    }
 }
 
 fn determine_trait_generics<'a>(generics: &mut Generics, self_ty: &'a Type) -> Option<&'a Ident> {
@@ -213,7 +263,7 @@ fn determine_trait_generics<'a>(generics: &mut Generics, self_ty: &'a Type) -> O
     None
 }
 
-fn trait_from_impl(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
+fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     /// Replace `self_ty` with `Self`.
     struct ReplaceParam<'a> {
         self_ty: &'a Ident,
@@ -227,6 +277,7 @@ fn trait_from_impl(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
         }
     }
 
+    let name = args.name.unwrap();
     let mut generics = item.generics.clone();
     let mut visitor = determine_trait_generics(&mut generics, &item.self_ty)
         .map(|self_ty| ReplaceParam { self_ty });
@@ -235,13 +286,16 @@ fn trait_from_impl(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
         visitor.visit_generics_mut(&mut generics);
     }
     let ty_generics = generics.split_for_impl().1;
-    let trait_ = parse_quote!(#ident #ty_generics);
+    let trait_ = parse_quote!(#name #ty_generics);
     item.trait_ = Some((None, trait_, <Token![for]>::default()));
 
-    let mut vis = None;
+    // impl-level visibility
+    let impl_vis = args.vis;
+    // assoc-item-level visibility
+    let mut assoc_vis = None;
     let mut items = Vec::with_capacity(item.items.len());
     item.items.iter_mut().try_for_each(|item| {
-        trait_item_from_impl_item(item, &mut vis).map(|mut item| {
+        trait_item_from_impl_item(item, &mut assoc_vis, &impl_vis).map(|mut item| {
             if let Some(visitor) = &mut visitor {
                 visitor.visit_trait_item_mut(&mut item);
             }
@@ -255,11 +309,12 @@ fn trait_from_impl(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
 
     Ok(ItemTrait {
         attrs,
-        vis: vis.unwrap_or(Visibility::Inherited),
+        // impl-level visibility > assoc-item-level visibility > inherited visibility
+        vis: impl_vis.unwrap_or_else(|| assoc_vis.unwrap_or(Visibility::Inherited)),
         unsafety: item.unsafety,
         auto_token: None,
         trait_token: <Token![trait]>::default(),
-        ident,
+        ident: name,
         generics,
         colon_token: None,
         supertraits: Punctuated::new(),
@@ -271,6 +326,7 @@ fn trait_from_impl(item: &mut ItemImpl, ident: Ident) -> Result<ItemTrait> {
 fn trait_item_from_impl_item(
     impl_item: &mut ImplItem,
     prev_vis: &mut Option<Visibility>,
+    impl_vis: &Option<Visibility>,
 ) -> Result<TraitItem> {
     fn compare_visibility(x: &Visibility, y: &Visibility) -> bool {
         match (x, y) {
@@ -287,21 +343,29 @@ fn trait_item_from_impl_item(
     fn check_visibility(
         current: Visibility,
         prev: &mut Option<Visibility>,
+        impl_vis: &Option<Visibility>,
         span: &dyn ToTokens,
     ) -> Result<()> {
+        if impl_vis.is_some() {
+            return if let Visibility::Inherited = current {
+                Ok(())
+            } else {
+                Err(error!(current, "all associated items must have inherited visibility"))
+            };
+        }
         match prev {
             None => *prev = Some(current),
             Some(prev) if compare_visibility(prev, &current) => {}
             Some(prev) => {
-                if let Visibility::Inherited = prev {
-                    return Err(error!(current, "All items must have inherited visibility"));
+                return if let Visibility::Inherited = prev {
+                    Err(error!(current, "all associated items must have inherited visibility"))
                 } else {
-                    return Err(error!(
+                    Err(error!(
                         if let Visibility::Inherited = current { span } else { &current },
-                        "All items must have a visibility of `{}`",
+                        "all associated items must have a visibility of `{}`",
                         prev.to_token_stream(),
-                    ));
-                }
+                    ))
+                };
             }
         }
         Ok(())
@@ -310,7 +374,7 @@ fn trait_item_from_impl_item(
     match impl_item {
         ImplItem::Const(impl_const) => {
             let vis = mem::replace(&mut impl_const.vis, Visibility::Inherited);
-            check_visibility(vis, prev_vis, &impl_const.ident)?;
+            check_visibility(vis, prev_vis, impl_vis, &impl_const.ident)?;
 
             let attrs = impl_const.attrs.clone();
             find_remove(&mut impl_const.attrs, "doc"); // https://github.com/taiki-e/easy-ext/issues/20
@@ -326,7 +390,7 @@ fn trait_item_from_impl_item(
         }
         ImplItem::Method(impl_method) => {
             let vis = mem::replace(&mut impl_method.vis, Visibility::Inherited);
-            check_visibility(vis, prev_vis, &impl_method.sig.ident)?;
+            check_visibility(vis, prev_vis, impl_vis, &impl_method.sig.ident)?;
 
             let mut attrs = impl_method.attrs.clone();
             find_remove(&mut impl_method.attrs, "doc"); // https://github.com/taiki-e/easy-ext/issues/20
