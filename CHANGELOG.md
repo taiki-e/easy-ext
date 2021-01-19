@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.2.6] - 2021-01-19
+
 - [Support specifying visibility at impl-level.](https://github.com/taiki-e/easy-ext/pull/25)
 
 ## [0.2.5] - 2021-01-05
@@ -80,7 +82,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.2.5...HEAD
+[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.2.6...HEAD
+[0.2.6]: https://github.com/taiki-e/easy-ext/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/taiki-e/easy-ext/compare/v0.2.4...v0.2.5
 [0.2.4]: https://github.com/taiki-e/easy-ext/compare/v0.2.3...v0.2.4
 [0.2.3]: https://github.com/taiki-e/easy-ext/compare/v0.2.2...v0.2.3
