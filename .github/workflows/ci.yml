@@ -37,7 +37,7 @@ jobs:
         run: cargo install cargo-hack
       - run: cargo test --all
       - if: startsWith(matrix.rust, 'nightly')
-        run: bash scripts/check-minimal-versions.sh
+        run: scripts/check-minimal-versions.sh
 
   build:
     strategy:
@@ -73,13 +73,13 @@ jobs:
       - run: cargo fmt --all -- --check
 
   rustdoc:
-    env:
-      RUSTDOCFLAGS: -D warnings
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: taiki-e/github-actions/install-rust@main
       - run: cargo doc --no-deps --all --all-features
+        env:
+          RUSTDOCFLAGS: -D warnings
 
   shellcheck:
     runs-on: ubuntu-latest
