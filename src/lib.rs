@@ -165,9 +165,10 @@
 #[allow(unused_extern_crates)]
 extern crate proc_macro;
 
+use std::{collections::hash_map::DefaultHasher, hash::Hasher, mem};
+
 use proc_macro::TokenStream;
 use quote::{format_ident, ToTokens};
-use std::{collections::hash_map::DefaultHasher, hash::Hasher, mem};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
