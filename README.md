@@ -1,10 +1,10 @@
 # easy-ext
 
-[![crates.io](https://img.shields.io/crates/v/easy-ext.svg?style=flat-square&logo=rust)](https://crates.io/crates/easy-ext)
+[![crates.io](https://img.shields.io/crates/v/easy-ext?style=flat-square&logo=rust)](https://crates.io/crates/easy-ext)
 [![docs.rs](https://img.shields.io/badge/docs.rs-easy--ext-blue?style=flat-square)](https://docs.rs/easy-ext)
-[![license](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue.svg?style=flat-square)](#license)
-[![rustc](https://img.shields.io/badge/rustc-1.31+-blue.svg?style=flat-square)](https://www.rust-lang.org)
-[![build status](https://img.shields.io/github/workflow/status/taiki-e/easy-ext/CI/master?style=flat-square)](https://github.com/taiki-e/easy-ext/actions?query=workflow%3ACI+branch%3Amaster)
+[![license](https://img.shields.io/badge/license-Apache--2.0_OR_MIT-blue?style=flat-square)](#license)
+[![rustc](https://img.shields.io/badge/rustc-1.31+-blue?style=flat-square&logo=rust)](https://www.rust-lang.org)
+[![build status](https://img.shields.io/github/workflow/status/taiki-e/easy-ext/CI/master?style=flat-square&logo=github)](https://github.com/taiki-e/easy-ext/actions)
 
 An attribute macro for easily writing [extension trait pattern][rfc0445].
 
