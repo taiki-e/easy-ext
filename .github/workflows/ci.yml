@@ -33,11 +33,11 @@ jobs:
       - uses: taiki-e/github-actions/install-rust@main
         with:
           toolchain: ${{ matrix.rust }}
-      - if: startsWith(matrix.rust, 'nightly')
-        run: cargo install cargo-hack
+      - run: cargo install cargo-hack
+        if: startsWith(matrix.rust, 'nightly')
       - run: cargo test --all
-      - if: startsWith(matrix.rust, 'nightly')
-        run: scripts/check-minimal-versions.sh
+      - run: scripts/check-minimal-versions.sh
+        if: startsWith(matrix.rust, 'nightly')
 
   build:
     strategy:
