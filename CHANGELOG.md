@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- [Support associated types.](https://github.com/taiki-e/easy-ext/pull/26)
+
 ## [0.2.6] - 2021-01-19
 
 - [Support specifying visibility at impl-level.](https://github.com/taiki-e/easy-ext/pull/25)

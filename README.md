@@ -143,29 +143,44 @@ where
 
 ### Supported items
 
-#### [Associated functions (methods)](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
+#### [Associated functions (methods)](https://doc.rust-lang.org/reference/items/associated-items.html#associated-functions-and-methods)
 
 ```rust
 use easy_ext::ext;
 
-#[ext(Ext)]
+#[ext]
 impl<T> T {
     fn method(&self) {}
 }
 ```
 
-#### [Associated constants](https://doc.rust-lang.org/edition-guide/rust-2018/trait-system/associated-constants.html)
+#### [Associated constants](https://doc.rust-lang.org/reference/items/associated-items.html#associated-constants)
 
 ```rust
 use easy_ext::ext;
 
-#[ext(Ext)]
+#[ext]
 impl<T> T {
     const MSG: &'static str = "Hello!";
 }
 ```
 
-[rfc0445]: https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md
+#### [Associated types](https://doc.rust-lang.org/reference/items/associated-items.html#associated-types)
+
+```rust
+use easy_ext::ext;
+
+#[ext]
+impl str {
+    type Owned = String;
+
+    fn method(&self) -> Self::Owned {
+        self.to_owned()
+    }
+}
+```
+
+[rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
 
 ## License
 
