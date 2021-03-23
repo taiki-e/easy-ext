@@ -62,7 +62,7 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.1.3] - 2019-02-21
 
-- Removed `inline` attributes on trait method side. It can avoid [`clippy::inline_fn_without_body`](https://rust-lang.github.io/rust-clippy/master/index.html#inline_fn_without_body) by this.
+- Removed `inline` attributes on trait method side. It can avoid `clippy::inline_fn_without_body` lint by this.
 
 ## [0.1.2] - 2019-02-21
 
