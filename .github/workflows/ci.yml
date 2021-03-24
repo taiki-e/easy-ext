@@ -36,7 +36,7 @@ jobs:
       - run: cargo install cargo-hack
         if: startsWith(matrix.rust, 'nightly')
       - run: cargo test --all
-      - run: scripts/check-minimal-versions.sh
+      - run: tools/check-minimal-versions.sh
         if: startsWith(matrix.rust, 'nightly')
 
   build:

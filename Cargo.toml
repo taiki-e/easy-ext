@@ -8,7 +8,7 @@ repository = "https://github.com/taiki-e/easy-ext"
 documentation = "https://docs.rs/easy-ext"
 keywords = ["extension", "trait", "macros", "attribute"]
 categories = ["no-std", "rust-patterns"]
-exclude = ["/.*", "/scripts"]
+exclude = ["/.*", "/tools"]
 description = """
 An attribute macro for easily writing extension trait pattern.
 """
