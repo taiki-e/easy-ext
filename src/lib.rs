@@ -124,29 +124,44 @@
 //!
 //! ## Supported items
 //!
-//! ### [Associated functions (methods)](https://doc.rust-lang.org/book/ch05-03-method-syntax.html)
+//! ### [Associated functions (methods)](https://doc.rust-lang.org/reference/items/associated-items.html#associated-functions-and-methods)
 //!
 //! ```rust
 //! use easy_ext::ext;
 //!
-//! #[ext(Ext)]
+//! #[ext]
 //! impl<T> T {
 //!     fn method(&self) {}
 //! }
 //! ```
 //!
-//! ### [Associated constants](https://doc.rust-lang.org/edition-guide/rust-2018/trait-system/associated-constants.html)
+//! ### [Associated constants](https://doc.rust-lang.org/reference/items/associated-items.html#associated-constants)
 //!
 //! ```rust
 //! use easy_ext::ext;
 //!
-//! #[ext(Ext)]
+//! #[ext]
 //! impl<T> T {
 //!     const MSG: &'static str = "Hello!";
 //! }
 //! ```
 //!
-//! [rfc0445]: https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md
+//! ### [Associated types](https://doc.rust-lang.org/reference/items/associated-items.html#associated-types)
+//!
+//! ```rust
+//! use easy_ext::ext;
+//!
+//! #[ext]
+//! impl str {
+//!     type Owned = String;
+//!
+//!     fn method(&self) -> Self::Owned {
+//!         self.to_owned()
+//!     }
+//! }
+//! ```
+//!
+//! [rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
 
 #![doc(test(
     no_crate_inject,
@@ -176,8 +191,8 @@ use syn::{
     token,
     visit_mut::VisitMut,
     Attribute, Error, GenericParam, Generics, Ident, ImplItem, ItemImpl, ItemTrait, PredicateType,
-    Result, Token, TraitItem, TraitItemConst, TraitItemMethod, Type, TypeParam, TypePath,
-    Visibility, WherePredicate,
+    Result, Token, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType, Type, TypeParam,
+    TypePath, Visibility, WherePredicate,
 };
 
 macro_rules! error {
@@ -193,7 +208,7 @@ macro_rules! error {
 ///
 /// See crate level documentation for details.
 ///
-/// [rfc0445]: https://github.com/rust-lang/rfcs/blob/master/text/0445-extension-trait-conventions.md
+/// [rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut args: Args = syn::parse_macro_input!(args);
@@ -387,6 +402,23 @@ fn trait_item_from_impl_item(
                 ty: impl_const.ty.clone(),
                 default: None,
                 semi_token: impl_const.semi_token,
+            }))
+        }
+        ImplItem::Type(impl_type) => {
+            let vis = mem::replace(&mut impl_type.vis, Visibility::Inherited);
+            check_visibility(vis, prev_vis, impl_vis, &impl_type.ident)?;
+
+            let attrs = impl_type.attrs.clone();
+            find_remove(&mut impl_type.attrs, "doc"); // https://github.com/taiki-e/easy-ext/issues/20
+            Ok(TraitItem::Type(TraitItemType {
+                attrs,
+                type_token: impl_type.type_token,
+                ident: impl_type.ident.clone(),
+                generics: impl_type.generics.clone(),
+                colon_token: None,
+                bounds: Punctuated::new(),
+                default: None,
+                semi_token: impl_type.semi_token,
             }))
         }
         ImplItem::Method(impl_method) => {

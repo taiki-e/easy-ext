@@ -222,3 +222,33 @@ fn inline() {
         fn multiple(&self) {}
     }
 }
+
+#[test]
+fn assoc_ty() {
+    #[ext(StrExt)]
+    impl str {
+        type Assoc = String;
+
+        fn owned(&self) -> Self::Assoc {
+            self.to_string()
+        }
+    }
+
+    let s: <str as StrExt>::Assoc = "?".owned();
+    assert_eq!(s, "?");
+
+    #[ext(TryIterator)]
+    impl<I: Iterator<Item = Result<T, E>>, T, E> I {
+        type Ok = T;
+        type Error = E;
+
+        fn try_next(&mut self) -> Result<Option<Self::Ok>, Self::Error> {
+            self.next().transpose()
+        }
+    }
+
+    let mut iter = vec![Ok(1), Err(1)].into_iter();
+    assert_eq!(iter.try_next(), Ok(Some(1)));
+    assert_eq!(iter.try_next(), Err(1));
+    assert_eq!(iter.try_next(), Ok(None));
+}
