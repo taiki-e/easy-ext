@@ -5,11 +5,10 @@ error[E0603]: trait `StrExt1` is private
    |              ^^^^^^^ private trait
    |
 note: the trait `StrExt1` is defined here
-  --> $DIR/visibility-2.rs:4:5
+  --> $DIR/visibility-2.rs:5:5
    |
-4  |     #[ext(StrExt1)]
-   |     ^^^^^^^^^^^^^^^
-   = note: this error originates in an attribute macro (in Nightly builds, run with -Z macro-backtrace for more info)
+5  |     impl str {
+   |     ^^^^^^^^
 
 error[E0603]: trait `StrExt2` is private
   --> $DIR/visibility-2.rs:36:14

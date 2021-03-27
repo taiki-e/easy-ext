@@ -180,6 +180,15 @@
 #[allow(unused_extern_crates)]
 extern crate proc_macro;
 
+macro_rules! error {
+    ($span:expr, $msg:expr) => {
+        syn::Error::new_spanned(&$span, $msg)
+    };
+    ($span:expr, $($tt:tt)*) => {
+        error!($span, format!($($tt)*))
+    };
+}
+
 mod ast;
 
 use std::{collections::hash_map::DefaultHasher, hash::Hasher, iter::FromIterator, mem};
@@ -191,7 +200,7 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
     punctuated::Punctuated,
-    Attribute, Error, Expr, ExprPath, GenericArgument, GenericParam, Generics, Ident, Macro, Path,
+    Attribute, Error, Expr, GenericArgument, GenericParam, Generics, Ident, Macro, Path,
     PathArguments, PredicateType, Result, ReturnType, Token, Type, TypeParam, TypeParamBound,
     TypePath, Visibility, WherePredicate,
 };
@@ -200,15 +209,6 @@ use crate::ast::{
     ImplItem, ItemImpl, ItemTrait, Signature, TraitItem, TraitItemConst, TraitItemMethod,
     TraitItemType,
 };
-
-macro_rules! error {
-    ($span:expr, $msg:expr) => {
-        syn::Error::new_spanned(&$span, $msg)
-    };
-    ($span:expr, $($tt:tt)*) => {
-        error!($span, format!($($tt)*))
-    };
-}
 
 /// An attribute macro for easily writing [extension trait pattern][rfc0445].
 ///
@@ -299,7 +299,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         }
 
         fn visit_token_stream(&self, tokens: &mut TokenStream2) -> bool {
-            let mut out = Vec::new();
+            let mut out: Vec<TokenTree> = Vec::new();
             let mut modified = false;
             let mut iter = tokens.clone().into_iter().peekable();
             while let Some(tt) = iter.next() {
@@ -349,27 +349,15 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         fn visit_trait_item_mut(&mut self, node: &mut TraitItem) {
             match node {
                 TraitItem::Const(node) => {
-                    self.visit_trait_item_const_mut(node);
+                    self.visit_type_mut(&mut node.ty);
                 }
                 TraitItem::Method(node) => {
-                    self.visit_trait_item_method_mut(node);
+                    self.visit_signature_mut(&mut node.sig);
                 }
                 TraitItem::Type(node) => {
-                    self.visit_trait_item_type_mut(node);
+                    self.visit_generics_mut(&mut node.generics);
                 }
             }
-        }
-
-        fn visit_trait_item_const_mut(&mut self, node: &mut TraitItemConst) {
-            self.visit_type_mut(&mut node.ty);
-        }
-
-        fn visit_trait_item_method_mut(&mut self, node: &mut TraitItemMethod) {
-            self.visit_signature_mut(&mut node.sig);
-        }
-
-        fn visit_trait_item_type_mut(&mut self, node: &mut TraitItemType) {
-            self.visit_generics_mut(&mut node.generics);
         }
 
         fn visit_signature_mut(&mut self, node: &mut Signature) {
@@ -433,13 +421,6 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
                 Type::Infer(_) | Type::Never(_) | Type::Verbatim(_) => {}
                 _ => {}
             }
-        }
-
-        fn visit_expr_path_mut(&mut self, expr: &mut ExprPath) {
-            if let Some(qself) = &mut expr.qself {
-                self.visit_type_mut(&mut qself.ty);
-            }
-            self.visit_path_mut(&mut expr.path);
         }
 
         fn visit_path_mut(&mut self, path: &mut Path) {
@@ -531,14 +512,25 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
                     self.visit_expr_mut(&mut expr.expr);
                     self.visit_type_mut(&mut expr.ty);
                 }
-                Expr::Field(expr) => self.visit_expr_mut(&mut expr.base),
+                Expr::Field(expr) => {
+                    self.visit_expr_mut(&mut expr.base);
+                }
                 Expr::Index(expr) => {
                     self.visit_expr_mut(&mut expr.expr);
                     self.visit_expr_mut(&mut expr.index);
                 }
-                Expr::Paren(expr) => self.visit_expr_mut(&mut expr.expr),
-                Expr::Path(expr) => self.visit_expr_path_mut(expr),
-                Expr::Unary(expr) => self.visit_expr_mut(&mut expr.expr),
+                Expr::Paren(expr) => {
+                    self.visit_expr_mut(&mut expr.expr);
+                }
+                Expr::Path(expr) => {
+                    if let Some(qself) = &mut expr.qself {
+                        self.visit_type_mut(&mut qself.ty);
+                    }
+                    self.visit_path_mut(&mut expr.path);
+                }
+                Expr::Unary(expr) => {
+                    self.visit_expr_mut(&mut expr.expr);
+                }
                 _ => {}
             }
         }
@@ -578,10 +570,10 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
 
     Ok(ItemTrait {
         attrs,
-        // impl-level visibility > assoc-item-level visibility > inherited visibility
+        // priority: impl-level visibility > assoc-item-level visibility > inherited visibility
         vis: impl_vis.unwrap_or_else(|| assoc_vis.unwrap_or(Visibility::Inherited)),
         unsafety: item.unsafety,
-        trait_token: <Token![trait]>::default(),
+        trait_token: Token![trait](item.impl_token.span),
         ident: name,
         generics,
         brace_token: item.brace_token,

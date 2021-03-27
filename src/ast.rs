@@ -7,7 +7,7 @@ pub(crate) struct ItemImpl {
     pub(crate) attrs: Vec<Attribute>,
     defaultness: Option<Token![default]>,
     pub(crate) unsafety: Option<Token![unsafe]>,
-    impl_token: Token![impl],
+    pub(crate) impl_token: Token![impl],
     pub(crate) generics: Generics,
     pub(crate) trait_: Option<(Path, Token![for])>,
     pub(crate) self_ty: Box<Type>,
@@ -57,8 +57,8 @@ pub(crate) struct ImplItemType {
 
 #[derive(Clone)]
 pub(crate) struct Signature {
-    before_fn: Vec<TokenTree>,
-    fn_token: Token![fn],
+    // [async|const] [unsafe] [extern [<abi>]] fn
+    before_ident: Vec<TokenTree>,
     pub(crate) ident: Ident,
     pub(crate) generics: Generics,
     paren_token: token::Paren,
@@ -277,15 +277,15 @@ mod parsing {
 
     impl Parse for Signature {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
-            let mut before_fn = vec![];
-            let fn_token;
+            let mut before_ident = vec![];
             loop {
-                match input.parse()? {
-                    TokenTree::Ident(ref i) if i == "fn" => {
-                        fn_token = Token![fn](i.span());
+                let tt = input.parse()?;
+                match &tt {
+                    TokenTree::Ident(i) if i == "fn" => {
+                        before_ident.push(tt);
                         break;
                     }
-                    tt => before_fn.push(tt),
+                    _ => before_ident.push(tt),
                 }
             }
 
@@ -299,7 +299,7 @@ mod parsing {
             let output: ReturnType = input.parse()?;
             generics.where_clause = input.parse()?;
 
-            Ok(Signature { before_fn, fn_token, ident, generics, paren_token, inputs, output })
+            Ok(Signature { before_ident, ident, generics, paren_token, inputs, output })
         }
     }
 }
@@ -441,8 +441,7 @@ mod printing {
 
     impl ToTokens for Signature {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.before_fn);
-            self.fn_token.to_tokens(tokens);
+            tokens.append_all(&self.before_ident);
             self.ident.to_tokens(tokens);
             self.generics.to_tokens(tokens);
             self.paren_token.surround(tokens, |tokens| {
