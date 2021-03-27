@@ -1,5 +1,6 @@
 #![warn(rust_2018_idioms, single_use_lifetimes)]
 
+use async_trait::async_trait;
 use easy_ext::ext;
 
 #[test]
@@ -177,33 +178,41 @@ fn trait_generics() {
 
     #[ext(ConstInit)]
     impl A {
-        const INIT: Self = Self {};
+        const INIT1: Self = Self {};
         const INIT2: A = A {};
     }
 
     #[ext(Ext)]
     impl<I: Iterator + ConstInit> I {
-        const CONST: Self = Self::INIT;
-        const CONST2: I = I::INIT;
-        fn method(mut self) -> Option<Self::Item> {
+        const CONST1: Self = Self::INIT1;
+        const CONST2: I = I::INIT1;
+        type Item2 = Self::Item;
+        type Item3 = I::Item;
+        fn method1(mut self) -> Option<Self::Item> {
             self.next()
         }
         fn method2(mut self) -> Option<I::Item> {
             self.next()
         }
+        fn method3(mut self) -> Option<Self::Item2> {
+            self.next()
+        }
+        fn method4(mut self) -> Option<<I as Ext>::Item3> {
+            self.next()
+        }
     }
 
     fn a<T: Ext + Eq + std::fmt::Debug>(mut x: T) {
-        let y = T::CONST;
+        let y = T::CONST1;
         let _ = T::CONST2;
         assert_eq!(x, y);
         assert!(x.next().is_none());
     }
 
-    assert_eq!(A {}.method(), None);
+    assert_eq!(A {}.method1(), None);
     assert_eq!(A {}.method2(), None);
 
-    a(A::INIT);
+    a(A::INIT1);
     a(A::INIT2);
 }
 
@@ -213,13 +222,19 @@ fn inline() {
     impl str {
         #[inline]
         fn auto(&self) {}
+        #[inline]
+        #[inline]
+        fn auto2(&self) {}
         #[inline(always)]
         fn always(&self) {}
+        #[inline(always)]
+        #[inline(always)]
+        fn always2(&self) {}
         #[inline(never)]
         fn never(&self) {}
-        #[inline]
-        #[inline]
-        fn multiple(&self) {}
+        #[inline(never)]
+        #[inline(never)]
+        fn never2(&self) {}
     }
 }
 
@@ -257,16 +272,62 @@ fn assoc_ty() {
 fn syntax() {
     #[ext(E1)]
     unsafe impl str {
+        fn normal(&self) {}
         unsafe fn unsafety(&self) {}
         extern "C" fn abi() {}
+        unsafe extern "C" fn unsafe_abi() {}
     }
 
+    let _ = "a".normal();
     let _ = unsafe { "?".unsafety() };
     let _ = str::abi();
+    let _ = unsafe { str::unsafe_abi() };
 
     struct S {}
     unsafe impl E1 for S {
+        fn normal(&self) {}
         unsafe fn unsafety(&self) {}
         extern "C" fn abi() {}
+        unsafe extern "C" fn unsafe_abi() {}
     }
+
+    #[ext(E2)]
+    #[async_trait]
+    impl str {
+        async fn asyncness(&self) {}
+        async unsafe fn unsafe_asyncness(&self) {}
+    }
+
+    let _ = async {
+        "a".asyncness().await;
+        unsafe { "b".unsafe_asyncness().await }
+    };
+
+    #[async_trait]
+    impl E2 for S {
+        async fn asyncness(&self) {}
+        async unsafe fn unsafe_asyncness(&self) {}
+    }
+}
+
+#[test]
+fn min_const_generics() {
+    struct S1<T, const CAP: usize>([T; CAP]);
+    #[ext(E1)]
+    impl<T, const CAP: usize> S1<T, CAP> {
+        const CAPACITY: usize = CAP;
+        fn f<const C: usize>() -> S1<T, C> {
+            todo!()
+        }
+    }
+
+    struct S2<const CAP: usize>;
+    impl<const CAP: usize> E1<(), CAP> for S2<CAP> {
+        const CAPACITY: usize = CAP;
+        fn f<const C: usize>() -> S1<(), C> {
+            S1([(); C])
+        }
+    }
+
+    let _: [(); 2] = <S2<3>>::f::<2>().0;
 }

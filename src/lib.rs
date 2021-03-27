@@ -462,8 +462,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
                                     self.visit_type_param_bound_mut(bound);
                                 }
                             }
-                            GenericArgument::Const(arg) => self.visit_expr_mut(arg),
-                            GenericArgument::Lifetime(_) => {}
+                            GenericArgument::Const(_) | GenericArgument::Lifetime(_) => {}
                         }
                     }
                 }
@@ -498,10 +497,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
                             self.visit_type_param_bound_mut(bound);
                         }
                     }
-                    GenericParam::Const(param) => {
-                        self.visit_type_mut(&mut param.ty);
-                    }
-                    GenericParam::Lifetime(_) => {}
+                    GenericParam::Const(_) | GenericParam::Lifetime(_) => {}
                 }
             }
             if let Some(where_clause) = &mut generics.where_clause {
