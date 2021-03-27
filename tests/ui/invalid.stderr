@@ -1,0 +1,47 @@
+error: expected `=`
+ --> $DIR/invalid.rs:6:24
+  |
+6 |         const ASSOC: u8; //~ ERROR expected `=`
+  |                        ^
+
+error: expected `=`
+  --> $DIR/invalid.rs:10:19
+   |
+10 |         type Assoc; //~ ERROR expected `=`
+   |                   ^
+
+error: expected curly braces
+  --> $DIR/invalid.rs:14:19
+   |
+14 |         fn assoc(); //~ ERROR expected curly braces
+   |                   ^
+
+error: expected one of: `default`, `fn`, `const`, `type`
+  --> $DIR/invalid.rs:19:9
+   |
+19 |         mac!(); //~ ERROR expected one of: `default`, `fn`, `const`, `type`
+   |         ^^^
+
+error: all associated items must have a visibility of `pub`
+  --> $DIR/invalid.rs:29:15
+   |
+29 |         const ASSOC2: u8 = 2; //~ ERROR all associated items must have a visibility of `pub`
+   |               ^^^^^^
+
+error: all associated items must have inherited visibility
+  --> $DIR/invalid.rs:36:9
+   |
+36 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+   |         ^^^
+
+error: all associated items must have a visibility of `pub(crate)`
+  --> $DIR/invalid.rs:42:9
+   |
+42 |         pub type Assoc2 = (); //~ ERROR all associated items must have a visibility of `pub(crate)`
+   |         ^^^
+
+error: all associated items must have inherited visibility
+  --> $DIR/invalid.rs:49:9
+   |
+49 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+   |         ^^^

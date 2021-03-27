@@ -278,10 +278,10 @@ fn syntax() {
         unsafe extern "C" fn unsafe_abi() {}
     }
 
-    let _ = "a".normal();
-    let _ = unsafe { "?".unsafety() };
-    let _ = str::abi();
-    let _ = unsafe { str::unsafe_abi() };
+    "a".normal();
+    unsafe { "?".unsafety() };
+    str::abi();
+    unsafe { str::unsafe_abi() };
 
     struct S {}
     unsafe impl E1 for S {
