@@ -1,10 +1,7 @@
 // Based on https://github.com/dtolnay/syn/blob/1.0.65/src/item.rs
 
 use proc_macro2::{TokenStream, TokenTree};
-use syn::{
-    braced, parenthesized, token, Abi, Attribute, Generics, Ident, Lifetime, Path, Result,
-    ReturnType, Token, Type, Visibility,
-};
+use syn::{token, Attribute, Generics, Ident, Path, ReturnType, Token, Type, Visibility};
 
 pub(crate) struct ItemImpl {
     pub(crate) attrs: Vec<Attribute>,
@@ -110,10 +107,14 @@ pub(crate) struct TraitItemType {
 }
 
 mod parsing {
-    use proc_macro2::Spacing;
-    use syn::parse::{discouraged::Speculative, Parse, ParseStream};
+    use proc_macro2::{Spacing, TokenTree};
+    use syn::{
+        braced, parenthesized,
+        parse::{discouraged::Speculative, Parse, ParseStream},
+        Abi, Attribute, Generics, Ident, Lifetime, Result, ReturnType, Token, Type, Visibility,
+    };
 
-    use super::*;
+    use super::{ImplItem, ImplItemConst, ImplItemMethod, ImplItemType, ItemImpl, Signature};
 
     impl Parse for ItemImpl {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
@@ -304,9 +305,13 @@ mod parsing {
 }
 
 mod printing {
-    use quote::*;
+    use proc_macro2::TokenStream;
+    use quote::{ToTokens, TokenStreamExt};
 
-    use super::*;
+    use super::{
+        ImplItem, ImplItemConst, ImplItemMethod, ImplItemType, ItemImpl, ItemTrait, Signature,
+        TraitItem, TraitItemConst, TraitItemMethod, TraitItemType,
+    };
 
     impl ToTokens for ItemTrait {
         fn to_tokens(&self, tokens: &mut TokenStream) {
