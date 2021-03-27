@@ -180,19 +180,25 @@
 #[allow(unused_extern_crates)]
 extern crate proc_macro;
 
-use std::{collections::hash_map::DefaultHasher, hash::Hasher, mem};
+mod ast;
+
+use std::{collections::hash_map::DefaultHasher, hash::Hasher, iter::FromIterator, mem};
 
 use proc_macro::TokenStream;
-use quote::{format_ident, ToTokens};
+use proc_macro2::{Group, Spacing, TokenStream as TokenStream2, TokenTree};
+use quote::{format_ident, quote_spanned, ToTokens};
 use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
     punctuated::Punctuated,
-    token,
     visit_mut::VisitMut,
-    Attribute, Error, GenericParam, Generics, Ident, ImplItem, ItemImpl, ItemTrait, PredicateType,
-    Result, Token, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType, Type, TypeParam,
+    Attribute, Error, GenericParam, Generics, Ident, PredicateType, Result, Token, Type, TypeParam,
     TypePath, Visibility, WherePredicate,
+};
+
+use crate::ast::{
+    ImplItem, ItemImpl, ItemTrait, Signature, TraitItem, TraitItemConst, TraitItemMethod,
+    TraitItemType,
 };
 
 macro_rules! error {
@@ -285,6 +291,88 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         self_ty: &'a Ident,
     }
 
+    impl ReplaceParam<'_> {
+        fn visit_token_stream(&self, tokens: &mut TokenStream2) -> bool {
+            let mut out = Vec::new();
+            let mut modified = false;
+            let mut iter = tokens.clone().into_iter().peekable();
+            while let Some(tt) = iter.next() {
+                match tt {
+                    TokenTree::Ident(ident) => {
+                        if ident == *self.self_ty {
+                            modified = true;
+                            let self_ = Ident::new("Self", ident.span());
+                            match iter.peek() {
+                                Some(TokenTree::Punct(p))
+                                    if p.as_char() == ':' && p.spacing() == Spacing::Joint =>
+                                {
+                                    let next = iter.next().unwrap();
+                                    match iter.peek() {
+                                        Some(TokenTree::Punct(p)) if p.as_char() == ':' => {
+                                            let span = ident.span();
+                                            out.extend(quote_spanned!(span=> <#self_>))
+                                        }
+                                        _ => out.push(self_.into()),
+                                    }
+                                    out.push(next);
+                                }
+                                _ => out.push(self_.into()),
+                            }
+                        } else {
+                            out.push(TokenTree::Ident(ident));
+                        }
+                    }
+                    TokenTree::Group(group) => {
+                        let mut content = group.stream();
+                        modified |= self.visit_token_stream(&mut content);
+                        let mut new = Group::new(group.delimiter(), content);
+                        new.set_span(group.span());
+                        out.push(TokenTree::Group(new));
+                    }
+                    other => out.push(other),
+                }
+            }
+            if modified {
+                *tokens = TokenStream2::from_iter(out);
+            }
+            modified
+        }
+
+        // Everything below is simply traversing the syntax tree.
+
+        fn visit_trait_item_mut(&mut self, node: &mut TraitItem) {
+            match node {
+                TraitItem::Const(node) => {
+                    self.visit_trait_item_const_mut(node);
+                }
+                TraitItem::Method(node) => {
+                    self.visit_trait_item_method_mut(node);
+                }
+                TraitItem::Type(node) => {
+                    self.visit_trait_item_type_mut(node);
+                }
+            }
+        }
+
+        fn visit_trait_item_const_mut(&mut self, node: &mut TraitItemConst) {
+            self.visit_type_mut(&mut node.ty);
+        }
+
+        fn visit_trait_item_method_mut(&mut self, node: &mut TraitItemMethod) {
+            self.visit_signature_mut(&mut node.sig);
+        }
+
+        fn visit_trait_item_type_mut(&mut self, node: &mut TraitItemType) {
+            self.visit_generics_mut(&mut node.generics);
+        }
+
+        fn visit_signature_mut(&mut self, node: &mut Signature) {
+            self.visit_generics_mut(&mut node.generics);
+            self.visit_token_stream(&mut node.inputs);
+            self.visit_return_type_mut(&mut node.output);
+        }
+    }
+
     impl VisitMut for ReplaceParam<'_> {
         fn visit_ident_mut(&mut self, ident: &mut Ident) {
             if *ident == *self.self_ty {
@@ -303,7 +391,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     }
     let ty_generics = generics.split_for_impl().1;
     let trait_ = parse_quote!(#name #ty_generics);
-    item.trait_ = Some((None, trait_, <Token![for]>::default()));
+    item.trait_ = Some((trait_, <Token![for]>::default()));
 
     // impl-level visibility
     let impl_vis = args.vis;
@@ -328,13 +416,10 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         // impl-level visibility > assoc-item-level visibility > inherited visibility
         vis: impl_vis.unwrap_or_else(|| assoc_vis.unwrap_or(Visibility::Inherited)),
         unsafety: item.unsafety,
-        auto_token: None,
         trait_token: <Token![trait]>::default(),
         ident: name,
         generics,
-        colon_token: None,
-        supertraits: Punctuated::new(),
-        brace_token: token::Brace::default(),
+        brace_token: item.brace_token,
         items,
     })
 }
@@ -400,7 +485,6 @@ fn trait_item_from_impl_item(
                 ident: impl_const.ident.clone(),
                 colon_token: impl_const.colon_token,
                 ty: impl_const.ty.clone(),
-                default: None,
                 semi_token: impl_const.semi_token,
             }))
         }
@@ -415,9 +499,6 @@ fn trait_item_from_impl_item(
                 type_token: impl_type.type_token,
                 ident: impl_type.ident.clone(),
                 generics: impl_type.generics.clone(),
-                colon_token: None,
-                bounds: Punctuated::new(),
-                default: None,
                 semi_token: impl_type.semi_token,
             }))
         }
@@ -431,11 +512,9 @@ fn trait_item_from_impl_item(
             Ok(TraitItem::Method(TraitItemMethod {
                 attrs,
                 sig: impl_method.sig.clone(),
-                default: None,
-                semi_token: Some(Token![;](impl_method.block.brace_token.span)),
+                semi_token: Token![;](impl_method.brace_token.span),
             }))
         }
-        _ => Err(error!(impl_item, "unsupported item")),
     }
 }
 
