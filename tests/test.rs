@@ -252,3 +252,21 @@ fn assoc_ty() {
     assert_eq!(iter.try_next(), Err(1));
     assert_eq!(iter.try_next(), Ok(None));
 }
+
+#[test]
+fn syntax() {
+    #[ext(E1)]
+    unsafe impl str {
+        unsafe fn unsafety(&self) {}
+        extern "C" fn abi() {}
+    }
+
+    let _ = unsafe { "?".unsafety() };
+    let _ = str::abi();
+
+    struct S {}
+    unsafe impl E1 for S {
+        unsafe fn unsafety(&self) {}
+        extern "C" fn abi() {}
+    }
+}
