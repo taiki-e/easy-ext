@@ -191,8 +191,8 @@ use syn::{
     parse::{Parse, ParseStream},
     parse_quote,
     punctuated::Punctuated,
-    visit_mut::VisitMut,
-    Attribute, Error, GenericParam, Generics, Ident, PredicateType, Result, Token, Type, TypeParam,
+    Attribute, Error, Expr, ExprPath, GenericArgument, GenericParam, Generics, Ident, Macro, Path,
+    PathArguments, PredicateType, Result, ReturnType, Token, Type, TypeParam, TypeParamBound,
     TypePath, Visibility, WherePredicate,
 };
 
@@ -292,6 +292,12 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     }
 
     impl ReplaceParam<'_> {
+        fn visit_ident_mut(&mut self, ident: &mut Ident) {
+            if *ident == *self.self_ty {
+                *ident = Ident::new("Self", ident.span());
+            }
+        }
+
         fn visit_token_stream(&self, tokens: &mut TokenStream2) -> bool {
             let mut out = Vec::new();
             let mut modified = false;
@@ -371,14 +377,177 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
             self.visit_token_stream(&mut node.inputs);
             self.visit_return_type_mut(&mut node.output);
         }
-    }
 
-    impl VisitMut for ReplaceParam<'_> {
-        fn visit_ident_mut(&mut self, ident: &mut Ident) {
-            if *ident == *self.self_ty {
-                *ident = Ident::new("Self", ident.span());
+        fn visit_type_mut(&mut self, ty: &mut Type) {
+            match ty {
+                Type::Array(ty) => {
+                    self.visit_type_mut(&mut ty.elem);
+                    self.visit_expr_mut(&mut ty.len);
+                }
+                Type::BareFn(ty) => {
+                    for arg in &mut ty.inputs {
+                        self.visit_type_mut(&mut arg.ty);
+                    }
+                    self.visit_return_type_mut(&mut ty.output);
+                }
+                Type::Group(ty) => {
+                    self.visit_type_mut(&mut ty.elem);
+                }
+                Type::ImplTrait(ty) => {
+                    for bound in &mut ty.bounds {
+                        self.visit_type_param_bound_mut(bound);
+                    }
+                }
+                Type::Macro(ty) => {
+                    self.visit_macro_mut(&mut ty.mac);
+                }
+                Type::Paren(ty) => {
+                    self.visit_type_mut(&mut ty.elem);
+                }
+                Type::Path(ty) => {
+                    if let Some(qself) = &mut ty.qself {
+                        self.visit_type_mut(&mut qself.ty);
+                    }
+                    self.visit_path_mut(&mut ty.path);
+                }
+                Type::Ptr(ty) => {
+                    self.visit_type_mut(&mut ty.elem);
+                }
+                Type::Reference(ty) => {
+                    self.visit_type_mut(&mut ty.elem);
+                }
+                Type::Slice(ty) => {
+                    self.visit_type_mut(&mut ty.elem);
+                }
+                Type::TraitObject(ty) => {
+                    for bound in &mut ty.bounds {
+                        self.visit_type_param_bound_mut(bound);
+                    }
+                }
+                Type::Tuple(ty) => {
+                    for elem in &mut ty.elems {
+                        self.visit_type_mut(elem);
+                    }
+                }
+
+                Type::Infer(_) | Type::Never(_) | Type::Verbatim(_) => {}
+                _ => {}
             }
         }
+
+        fn visit_expr_path_mut(&mut self, expr: &mut ExprPath) {
+            if let Some(qself) = &mut expr.qself {
+                self.visit_type_mut(&mut qself.ty);
+            }
+            self.visit_path_mut(&mut expr.path);
+        }
+
+        fn visit_path_mut(&mut self, path: &mut Path) {
+            for segment in &mut path.segments {
+                self.visit_ident_mut(&mut segment.ident);
+                self.visit_path_arguments_mut(&mut segment.arguments);
+            }
+        }
+
+        fn visit_path_arguments_mut(&mut self, arguments: &mut PathArguments) {
+            match arguments {
+                PathArguments::None => {}
+                PathArguments::AngleBracketed(arguments) => {
+                    for arg in &mut arguments.args {
+                        match arg {
+                            GenericArgument::Type(arg) => self.visit_type_mut(arg),
+                            GenericArgument::Binding(arg) => self.visit_type_mut(&mut arg.ty),
+                            GenericArgument::Constraint(arg) => {
+                                for bound in &mut arg.bounds {
+                                    self.visit_type_param_bound_mut(bound);
+                                }
+                            }
+                            GenericArgument::Const(arg) => self.visit_expr_mut(arg),
+                            GenericArgument::Lifetime(_) => {}
+                        }
+                    }
+                }
+                PathArguments::Parenthesized(arguments) => {
+                    for argument in &mut arguments.inputs {
+                        self.visit_type_mut(argument);
+                    }
+                    self.visit_return_type_mut(&mut arguments.output);
+                }
+            }
+        }
+
+        fn visit_return_type_mut(&mut self, return_type: &mut ReturnType) {
+            match return_type {
+                ReturnType::Default => {}
+                ReturnType::Type(_, output) => self.visit_type_mut(output),
+            }
+        }
+
+        fn visit_type_param_bound_mut(&mut self, bound: &mut TypeParamBound) {
+            match bound {
+                TypeParamBound::Trait(bound) => self.visit_path_mut(&mut bound.path),
+                TypeParamBound::Lifetime(_) => {}
+            }
+        }
+
+        fn visit_generics_mut(&mut self, generics: &mut Generics) {
+            for param in &mut generics.params {
+                match param {
+                    GenericParam::Type(param) => {
+                        for bound in &mut param.bounds {
+                            self.visit_type_param_bound_mut(bound);
+                        }
+                    }
+                    GenericParam::Const(param) => {
+                        self.visit_type_mut(&mut param.ty);
+                    }
+                    GenericParam::Lifetime(_) => {}
+                }
+            }
+            if let Some(where_clause) = &mut generics.where_clause {
+                for predicate in &mut where_clause.predicates {
+                    match predicate {
+                        WherePredicate::Type(predicate) => {
+                            self.visit_type_mut(&mut predicate.bounded_ty);
+                            for bound in &mut predicate.bounds {
+                                self.visit_type_param_bound_mut(bound);
+                            }
+                        }
+                        WherePredicate::Lifetime(_) | WherePredicate::Eq(_) => {}
+                    }
+                }
+            }
+        }
+
+        fn visit_expr_mut(&mut self, expr: &mut Expr) {
+            match expr {
+                Expr::Binary(expr) => {
+                    self.visit_expr_mut(&mut expr.left);
+                    self.visit_expr_mut(&mut expr.right);
+                }
+                Expr::Call(expr) => {
+                    self.visit_expr_mut(&mut expr.func);
+                    for arg in &mut expr.args {
+                        self.visit_expr_mut(arg);
+                    }
+                }
+                Expr::Cast(expr) => {
+                    self.visit_expr_mut(&mut expr.expr);
+                    self.visit_type_mut(&mut expr.ty);
+                }
+                Expr::Field(expr) => self.visit_expr_mut(&mut expr.base),
+                Expr::Index(expr) => {
+                    self.visit_expr_mut(&mut expr.expr);
+                    self.visit_expr_mut(&mut expr.index);
+                }
+                Expr::Paren(expr) => self.visit_expr_mut(&mut expr.expr),
+                Expr::Path(expr) => self.visit_expr_path_mut(expr),
+                Expr::Unary(expr) => self.visit_expr_mut(&mut expr.expr),
+                _ => {}
+            }
+        }
+
+        fn visit_macro_mut(&mut self, _mac: &mut Macro) {}
     }
 
     let name = args.name.unwrap();
