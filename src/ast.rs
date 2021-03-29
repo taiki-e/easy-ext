@@ -51,13 +51,13 @@ pub(crate) struct ImplItemType {
     pub(crate) ident: Ident,
     pub(crate) generics: Generics,
     eq_token: Token![=],
-    ty: Type,
+    ty: Vec<TokenTree>,
     pub(crate) semi_token: Token![;],
 }
 
 #[derive(Clone)]
 pub(crate) struct Signature {
-    // [async|const] [unsafe] [extern [<abi>]] fn
+    // [const] [async] [unsafe] [extern [<abi>]] fn
     before_ident: Vec<TokenTree>,
     pub(crate) ident: Ident,
     pub(crate) generics: Generics,
@@ -107,7 +107,7 @@ pub(crate) struct TraitItemType {
 }
 
 mod parsing {
-    use proc_macro2::{Spacing, TokenTree};
+    use proc_macro2::{Spacing, Span, TokenTree};
     use syn::{
         braced, parenthesized,
         parse::{discouraged::Speculative, Parse, ParseStream},
@@ -115,6 +115,27 @@ mod parsing {
     };
 
     use super::{ImplItem, ImplItemConst, ImplItemMethod, ImplItemType, ItemImpl, Signature};
+
+    fn parse_until_punct<T>(
+        input: ParseStream<'_>,
+        ch: char,
+        after: fn(Span) -> T,
+    ) -> Result<(Vec<TokenTree>, T)> {
+        let mut buf = vec![];
+        loop {
+            match input.parse()? {
+                Some(TokenTree::Punct(ref p))
+                    if p.as_char() == ch && p.spacing() == Spacing::Alone =>
+                {
+                    return Ok((buf, after(p.span())));
+                }
+                None => {
+                    return Err(input.error(format!("expected `{}`", ch)));
+                }
+                Some(tt) => buf.push(tt),
+            }
+        }
+    }
 
     impl Parse for ItemImpl {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
@@ -185,19 +206,7 @@ mod parsing {
                 let ty: Type = input.parse()?;
                 let eq_token = input.parse()?;
 
-                let mut expr = vec![];
-                let semi_token;
-                loop {
-                    match input.parse()? {
-                        TokenTree::Punct(ref p)
-                            if p.as_char() == ';' && p.spacing() == Spacing::Alone =>
-                        {
-                            semi_token = Token![;](p.span());
-                            break;
-                        }
-                        tt => expr.push(tt),
-                    }
-                }
+                let (expr, semi_token) = parse_until_punct(input, ';', Token![;])?;
 
                 return Ok(ImplItem::Const(ImplItemConst {
                     attrs,
@@ -248,20 +257,27 @@ mod parsing {
 
     impl Parse for ImplItemType {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
+            let attrs = input.call(Attribute::parse_outer)?;
+            let vis = input.parse()?;
+            let defaultness = input.parse()?;
+            let type_token = input.parse()?;
+            let ident = input.parse()?;
+            let mut generics: Generics = input.parse()?;
+            generics.where_clause = input.parse()?;
+            let eq_token = input.parse()?;
+
+            let (ty, semi_token) = parse_until_punct(input, ';', Token![;])?;
+
             Ok(ImplItemType {
-                attrs: input.call(Attribute::parse_outer)?,
-                vis: input.parse()?,
-                defaultness: input.parse()?,
-                type_token: input.parse()?,
-                ident: input.parse()?,
-                generics: {
-                    let mut generics: Generics = input.parse()?;
-                    generics.where_clause = input.parse()?;
-                    generics
-                },
-                eq_token: input.parse()?,
-                ty: input.parse()?,
-                semi_token: input.parse()?,
+                attrs,
+                vis,
+                defaultness,
+                type_token,
+                ident,
+                generics,
+                eq_token,
+                ty,
+                semi_token,
             })
         }
     }
@@ -434,7 +450,7 @@ mod printing {
             self.generics.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
             self.eq_token.to_tokens(tokens);
-            self.ty.to_tokens(tokens);
+            tokens.append_all(&self.ty);
             self.semi_token.to_tokens(tokens);
         }
     }
