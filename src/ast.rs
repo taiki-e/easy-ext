@@ -136,10 +136,10 @@ pub(crate) enum AttributeKind {
 }
 
 impl Attribute {
-    pub(crate) fn new(tokens: TokenStream) -> Self {
+    pub(crate) fn new(tokens: Vec<TokenTree>) -> Self {
         Self {
             pound_token: Punct::new('#', Spacing::Alone),
-            tokens: Group::new(Delimiter::Bracket, tokens),
+            tokens: Group::new(Delimiter::Bracket, tokens.into_iter().collect()),
             kind: AttributeKind::Other,
         }
     }
@@ -230,7 +230,7 @@ pub(crate) struct ItemImpl {
     pub(crate) unsafety: Option<Ident>,
     pub(crate) impl_token: Ident,
     pub(crate) generics: Generics,
-    pub(crate) trait_: Option<TokenStream>,
+    pub(crate) trait_: Option<(Ident, TokenStream, Ident)>,
     pub(crate) self_ty: Vec<TokenTree>,
     pub(crate) brace_token: token::Brace,
     pub(crate) items: Vec<ImplItem>,
@@ -339,7 +339,7 @@ mod parsing {
         ImplItemMethod, ImplItemType, ItemImpl, LifetimeDef, PredicateLifetime, PredicateType,
         Signature, TypeParam, TypeParamBound, Visibility, WhereClause, WherePredicate,
     };
-    use crate::quote::ToTokens;
+    use crate::to_tokens::ToTokens;
 
     pub(crate) fn parse_group(input: ParseStream<'_>, delimiter: Delimiter) -> Result<Group> {
         let (ok, ch) = match delimiter {
@@ -1084,7 +1084,7 @@ pub(crate) mod printing {
         PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType,
         TypeGenerics, TypeParam, TypeParamBound, Visibility, WhereClause, WherePredicate,
     };
-    use crate::quote::ToTokens;
+    use crate::to_tokens::ToTokens;
 
     pub(crate) fn punct(ch: char, span: Span) -> Punct {
         let mut p = Punct::new(ch, Spacing::Alone);
@@ -1376,7 +1376,11 @@ pub(crate) mod printing {
             self.unsafety.to_tokens(tokens);
             self.impl_token.to_tokens(tokens);
             self.generics.to_tokens(tokens);
-            self.trait_.to_tokens(tokens);
+            if let Some((i, g, f)) = &self.trait_ {
+                i.to_tokens(tokens);
+                g.to_tokens(tokens);
+                f.to_tokens(tokens);
+            }
             self.self_ty.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
             surround(&self.brace_token, tokens, |tokens| {

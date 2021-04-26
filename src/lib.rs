@@ -188,23 +188,21 @@ extern crate proc_macro;
 
 macro_rules! error {
     ($span:expr, $msg:expr) => {
-        syn::Error::new(crate::quote::ToTokens::span(&$span), $msg)
+        syn::Error::new(crate::to_tokens::ToTokens::span(&$span), $msg)
     };
     ($span:expr, $($tt:tt)*) => {
         error!($span, format!($($tt)*))
     };
 }
 
-#[macro_use]
-mod quote;
-
 mod ast;
 mod iter;
+mod to_tokens;
 
 use std::{collections::hash_map::DefaultHasher, hash::Hasher, iter::FromIterator, mem};
 
 use proc_macro::TokenStream;
-use proc_macro2::{Group, Spacing, Span, TokenStream as TokenStream2, TokenTree};
+use proc_macro2::{Delimiter, Group, Spacing, Span, TokenStream as TokenStream2, TokenTree};
 use syn::{
     parse::{Parse, ParseStream},
     token, Error, Ident, Result,
@@ -216,7 +214,7 @@ use crate::{
         ItemTrait, PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod,
         TraitItemType, TypeParam, Visibility, WherePredicate,
     },
-    quote::ToTokens,
+    to_tokens::ToTokens,
 };
 
 /// An attribute macro for easily writing [extension trait pattern][rfc0445].
@@ -451,7 +449,8 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         visitor.remove_maybe = false;
     }
     let ty_generics = generics.ty_generics();
-    item.trait_ = Some(quote! { #name #ty_generics for });
+    item.trait_ =
+        Some((name.clone(), ty_generics.to_token_stream(), Ident::new("for", Span::call_site())));
 
     // impl-level visibility
     let mut impl_vis = if item.vis.is_inherited() { None } else { Some(item.vis.clone()) };
@@ -476,7 +475,15 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
 
     let mut attrs = item.attrs.clone();
     find_remove(&mut item.attrs, AttributeKind::Doc); // https://github.com/taiki-e/easy-ext/issues/20
-    attrs.push(Attribute::new(quote!(allow(patterns_in_fns_without_body)))); // mut self
+    attrs.push(Attribute::new(vec![
+        TokenTree::Ident(Ident::new("allow", Span::call_site())),
+        TokenTree::Group(Group::new(
+            Delimiter::Parenthesis,
+            Some(TokenTree::Ident(Ident::new("patterns_in_fns_without_body", Span::call_site())))
+                .into_iter()
+                .collect(),
+        )),
+    ])); // mut self
 
     Ok(ItemTrait {
         attrs,
