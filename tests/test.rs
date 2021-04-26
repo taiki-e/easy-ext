@@ -217,6 +217,14 @@ fn trait_generics() {
 }
 
 #[test]
+fn maybe() {
+    #[ext(X)]
+    impl<T: ?Sized> T {
+        fn f(&self) {}
+    }
+}
+
+#[test]
 fn inline() {
     #[ext]
     impl str {
@@ -308,6 +316,15 @@ fn syntax() {
         async fn asyncness(&self) {}
         async unsafe fn unsafe_asyncness(&self) {}
     }
+
+    #[ext(E3)]
+    impl fn() -> () {
+        const FUNC: fn(&str) -> () = str::normal as fn(&str) -> ();
+        type Func = fn() -> fn() -> ();
+        fn func() -> fn() -> fn() -> () {
+            || || {}
+        }
+    }
 }
 
 #[test]
@@ -322,12 +339,32 @@ fn min_const_generics() {
     }
 
     struct S2<const CAP: usize>;
-    impl<const CAP: usize> E1<(), CAP> for S2<CAP> {
+    impl<const CAP: usize> E1<(), { CAP }> for S2<{ CAP }> {
         const CAPACITY: usize = CAP;
-        fn f<const C: usize>() -> S1<(), C> {
+        fn f<const C: usize>() -> S1<(), { C }> {
             S1([(); C])
         }
     }
 
     let _: [(); 2] = <S2<3>>::f::<2>().0;
+
+    struct S3<T, const CAP: char>(T);
+
+    #[ext(E2)]
+    impl str {
+        fn method1(&self) -> S1<Option<fn() -> ()>, 1> {
+            S1([Some(|| {})])
+        }
+        #[allow(unused_braces)]
+        fn method2(&self) -> S1<Option<fn() -> ()>, { 1 }> {
+            S1([Some(|| {})])
+        }
+        fn method3(&self) -> S3<fn() -> (), 'a'> {
+            S3(|| {})
+        }
+        #[allow(unused_braces)]
+        fn method4(&self) -> S3<fn() -> (), { 'a' }> {
+            S3(|| {})
+        }
+    }
 }

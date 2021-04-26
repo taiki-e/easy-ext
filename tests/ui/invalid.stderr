@@ -10,7 +10,7 @@ error: expected `=`
 10 |         type Assoc; //~ ERROR expected `=`
    |                   ^
 
-error: expected curly braces
+error: expected `{`
   --> $DIR/invalid.rs:14:19
    |
 14 |         fn assoc(); //~ ERROR expected curly braces
