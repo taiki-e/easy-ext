@@ -17,16 +17,10 @@ error[E0603]: trait `StrExt2` is private
    |              ^^^^^^^ private trait
    |
 note: the trait `StrExt2` is defined here
-  --> $DIR/visibility.rs:11:11
+  --> $DIR/visibility.rs:12:5
    |
-11 |       #[ext(pub(self) StrExt2)]
-   |  ___________^
-12 | |     impl str {
-13 | |         fn method2(&self, pat: &str) -> String {
-14 | |             self.replace(pat, "_")
-15 | |         }
-16 | |     }
-   | |_____^
+12 |     pub(self) impl str {
+   |     ^^^^^^^^^^^^^^^^^^
 
 error[E0603]: trait `StrExt3` is private
   --> $DIR/visibility.rs:38:19
@@ -35,13 +29,7 @@ error[E0603]: trait `StrExt3` is private
    |                   ^^^^^^^ private trait
    |
 note: the trait `StrExt3` is defined here
-  --> $DIR/visibility.rs:21:15
+  --> $DIR/visibility.rs:22:9
    |
-21 |           #[ext(pub(super) StrExt3)]
-   |  _______________^
-22 | |         impl str {
-23 | |             fn method3(&self, pat: &str) -> String {
-24 | |                 self.replace(pat, "_")
-25 | |             }
-26 | |         }
-   | |_________^
+22 |         pub(super) impl str {
+   |         ^^^^^^^^^^^^^^^^^^^

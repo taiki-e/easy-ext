@@ -1,13 +1,20 @@
 //! An attribute macro for easily writing [extension trait pattern][rfc0445].
 //!
+//! ```toml
+//! [dependencies]
+//! easy-ext = "0.2"
+//! ```
+//!
+//! *Compiler support: requires rustc 1.31+*
+//!
 //! # Examples
 //!
 //! ```rust
 //! use easy_ext::ext;
 //!
 //! #[ext(ResultExt)]
-//! impl<T, E> Result<T, E> {
-//!     pub fn err_into<U>(self) -> Result<T, U>
+//! pub impl<T, E> Result<T, E> {
+//!     fn err_into<U>(self) -> Result<T, U>
 //!     where
 //!         E: Into<U>,
 //!     {
@@ -60,21 +67,20 @@
 //!
 //! ### Impl-level visibility
 //!
-//! The first way is to specify visibility as the first argument to the `#[ext]`
-//! attribute. For example:
+//! The first way is to specify visibility at the impl level. For example:
 //!
 //! ```rust
 //! use easy_ext::ext;
 //!
 //! // unnamed
-//! #[ext(pub)]
-//! impl str {
+//! #[ext]
+//! pub impl str {
 //!     fn foo(&self) {}
 //! }
 //!
 //! // named
-//! #[ext(pub StrExt)]
-//! impl str {
+//! #[ext(StrExt)]
+//! pub impl str {
 //!     fn bar(&self) {}
 //! }
 //! ```
@@ -448,7 +454,14 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     item.trait_ = Some(quote! { #name #ty_generics for });
 
     // impl-level visibility
-    let impl_vis = args.vis;
+    let mut impl_vis = if item.vis.is_inherited() { None } else { Some(item.vis.clone()) };
+    match (&impl_vis, &args.vis) {
+        (_, None) => {}
+        (None, _) => impl_vis = args.vis,
+        (_, span) => {
+            return Err(error!(span, "visibility can only be specified once"));
+        }
+    };
     // assoc-item-level visibility
     let mut assoc_vis = None;
     let mut items = Vec::with_capacity(item.items.len());

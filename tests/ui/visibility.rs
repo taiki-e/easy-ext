@@ -8,8 +8,8 @@ mod foo {
         }
     }
 
-    #[ext(pub(self) StrExt2)]
-    impl str {
+    #[ext(StrExt2)]
+    pub(self) impl str {
         fn method2(&self, pat: &str) -> String {
             self.replace(pat, "_")
         }
@@ -18,8 +18,8 @@ mod foo {
     pub mod bar {
         use easy_ext::ext;
 
-        #[ext(pub(super) StrExt3)]
-        impl str {
+        #[ext(StrExt3)]
+        pub(super) impl str {
             fn method3(&self, pat: &str) -> String {
                 self.replace(pat, "_")
             }
@@ -32,8 +32,8 @@ mod foo {
 
 fn main() {
     use foo::StrExt1; //~ ERROR trait `StrExt1` is private [E0603]
-
+    let _: ();
     use foo::StrExt2; //~ ERROR trait `StrExt2` is private [E0603]
-
+    let _: ();
     use foo::bar::StrExt3; //~ ERROR trait `StrExt2` is private [E0603]
 }
