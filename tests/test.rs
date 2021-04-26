@@ -216,10 +216,42 @@ fn trait_generics() {
     a(A::INIT2);
 }
 
+// See also ui/maybe.rs
 #[test]
 fn maybe() {
-    #[ext(X)]
+    #[ext]
     impl<T: ?Sized> T {
+        fn f(&self) {}
+    }
+
+    #[ext]
+    impl<T> T
+    where
+        T: ?Sized,
+    {
+        fn f(&self) {}
+    }
+
+    #[ext]
+    impl<T: Send + ?Sized + Sync> T {
+        fn f(&self) {}
+    }
+
+    #[ext]
+    impl<T> T
+    where
+        T: Send + ?Sized + Sync,
+    {
+        fn f(&self) {}
+    }
+
+    #[ext]
+    impl<T> T
+    where
+        T: Iterator,
+        T: ?Sized,
+        T: Default,
+    {
         fn f(&self) {}
     }
 }

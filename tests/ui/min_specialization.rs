@@ -16,6 +16,7 @@ pub mod spec_iter {
     // To fix compile error, you will need to add `'a` to `SpecFromIter`.
     // See also spec_iter module in run-pass/min_specialization.rs.
     impl<'a, T> SpecFromIter<T> for std::slice::Iter<'a, T> {
+        //~^ ERROR E0726,E0495
         fn f(&self) {}
     }
 }

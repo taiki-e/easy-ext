@@ -12,16 +12,15 @@ pub(crate) struct Generics {
     pub(crate) lt_token: Option<Punct>,
     pub(crate) params: Vec<(GenericParam, Option<Punct>)>,
     pub(crate) gt_token: Option<Punct>,
-    pub(crate) where_clause: TokenStream,
+    pub(crate) where_clause: Option<WhereClause>,
 }
 
 impl Generics {
-    pub(crate) fn make_where_clause(&mut self) -> &mut TokenStream {
-        if self.where_clause.is_empty() {
-            self.where_clause
-                .extend(Some(TokenTree::Ident(Ident::new("where", Span::call_site()))));
-        }
-        &mut self.where_clause
+    pub(crate) fn make_where_clause(&mut self) -> &mut WhereClause {
+        self.where_clause.get_or_insert_with(|| WhereClause {
+            where_token: Ident::new("where", Span::call_site()),
+            predicates: Vec::new(),
+        })
     }
 
     pub(crate) fn ty_generics(&self) -> TypeGenerics<'_> {
@@ -31,12 +30,7 @@ impl Generics {
 
 impl Default for Generics {
     fn default() -> Self {
-        Self {
-            lt_token: None,
-            params: Vec::new(),
-            gt_token: None,
-            where_clause: TokenStream::new(),
-        }
+        Self { lt_token: None, params: Vec::new(), gt_token: None, where_clause: None }
     }
 }
 
@@ -75,6 +69,14 @@ pub(crate) struct LifetimeDef {
 }
 
 #[derive(Clone)]
+pub(crate) struct BoundLifetimes {
+    pub(crate) for_token: Ident,
+    pub(crate) lt_token: Punct,
+    pub(crate) lifetimes: Vec<(LifetimeDef, Option<Punct>)>,
+    pub(crate) gt_token: Punct,
+}
+
+#[derive(Clone)]
 pub(crate) struct ConstParam {
     pub(crate) attrs: Vec<Attribute>,
     pub(crate) const_token: Ident,
@@ -86,6 +88,33 @@ pub(crate) struct ConstParam {
 }
 
 pub(crate) struct TypeGenerics<'a>(&'a Generics);
+
+#[derive(Clone)]
+pub(crate) struct WhereClause {
+    pub(crate) where_token: Ident,
+    pub(crate) predicates: Vec<(WherePredicate, Option<Punct>)>,
+}
+
+#[derive(Clone)]
+pub(crate) enum WherePredicate {
+    Type(PredicateType),
+    Lifetime(PredicateLifetime),
+}
+
+#[derive(Clone)]
+pub(crate) struct PredicateType {
+    pub(crate) lifetimes: Option<BoundLifetimes>,
+    pub(crate) bounded_ty: TokenStream,
+    pub(crate) colon_token: Punct,
+    pub(crate) bounds: Vec<(TypeParamBound, Option<Punct>)>,
+}
+
+#[derive(Clone)]
+pub(crate) struct PredicateLifetime {
+    pub(crate) lifetime: Lifetime,
+    pub(crate) colon_token: Punct,
+    pub(crate) bounds: Vec<(Lifetime, Option<Punct>)>,
+}
 
 // Outer attribute
 #[derive(Clone)]
@@ -305,8 +334,9 @@ mod parsing {
     };
 
     use super::{
-        Attribute, ConstParam, GenericParam, Generics, ImplItem, ImplItemConst, ImplItemMethod,
-        ImplItemType, ItemImpl, LifetimeDef, Signature, TypeParam, TypeParamBound, Visibility,
+        Attribute, BoundLifetimes, ConstParam, GenericParam, Generics, ImplItem, ImplItemConst,
+        ImplItemMethod, ImplItemType, ItemImpl, LifetimeDef, PredicateLifetime, PredicateType,
+        Signature, TypeParam, TypeParamBound, Visibility, WhereClause, WherePredicate,
     };
     use crate::quote::ToTokens;
 
@@ -487,7 +517,7 @@ mod parsing {
                 lt_token: Some(lt_token),
                 params,
                 gt_token: Some(gt_token),
-                where_clause: TokenStream::new(),
+                where_clause: None,
             })
         }
     }
@@ -518,6 +548,28 @@ mod parsing {
         }
     }
 
+    impl Parse for BoundLifetimes {
+        fn parse(input: ParseStream<'_>) -> Result<Self> {
+            Ok(Self {
+                for_token: parse_kw(input, "for")?,
+                lt_token: parse_punct(input, '<')?,
+                lifetimes: {
+                    let mut lifetimes = Vec::new();
+                    while !input.peek(Token![>]) {
+                        let lt = input.parse()?;
+                        if input.peek(Token![>]) {
+                            lifetimes.push((lt, None));
+                            break;
+                        }
+                        lifetimes.push((lt, Some(parse_punct(input, ',')?)));
+                    }
+                    lifetimes
+                },
+                gt_token: parse_punct(input, '>')?,
+            })
+        }
+    }
+
     impl Parse for TypeParam {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
             let attrs = input.call(Attribute::parse_outer)?;
@@ -532,7 +584,6 @@ mod parsing {
                     }
 
                     let is_maybe = input.peek(Token![?]) && !input.peek2(Token![const]);
-
                     let mut value = vec![];
                     append_tokens_until(input, &mut value, false, |next| match next {
                         Some(TokenTree::Punct(p))
@@ -633,6 +684,132 @@ mod parsing {
         }
     }
 
+    impl Parse for WhereClause {
+        fn parse(input: ParseStream<'_>) -> Result<Self> {
+            let where_token = parse_kw(input, "where")?;
+            let mut predicates = Vec::new();
+            loop {
+                if input.is_empty()
+                    || input.peek(token::Brace)
+                    || input.peek(Token![,])
+                    || input.peek(Token![;])
+                    || input.peek(Token![:]) && !input.peek(Token![::])
+                    || input.peek(Token![=])
+                {
+                    break;
+                }
+                let value: WherePredicate = input.parse()?;
+                if !input.peek(Token![,]) {
+                    predicates.push((value, None));
+                    break;
+                }
+                let punct = parse_punct(input, ',')?;
+                predicates.push((value, Some(punct)));
+            }
+            Ok(Self { where_token, predicates })
+        }
+    }
+
+    impl Parse for WherePredicate {
+        fn parse(input: ParseStream<'_>) -> Result<Self> {
+            if input.peek(Lifetime) && input.peek2(Token![:]) {
+                Ok(WherePredicate::Lifetime(PredicateLifetime {
+                    lifetime: input.parse()?,
+                    colon_token: parse_punct(input, ':')?,
+                    bounds: {
+                        let mut bounds = Vec::new();
+                        loop {
+                            if input.is_empty()
+                                || input.peek(token::Brace)
+                                || input.peek(Token![,])
+                                || input.peek(Token![;])
+                                || input.peek(Token![:])
+                                || input.peek(Token![=])
+                            {
+                                break;
+                            }
+                            let value: Lifetime = input.parse()?;
+                            if !input.peek(Token![+]) {
+                                bounds.push((value, None));
+                                break;
+                            }
+                            let punct = parse_punct(input, '+')?;
+                            bounds.push((value, Some(punct)));
+                        }
+                        bounds
+                    },
+                }))
+            } else {
+                Ok(WherePredicate::Type(PredicateType {
+                    lifetimes: {
+                        if input.peek(Token![for]) { Some(input.parse()?) } else { None }
+                    },
+                    bounded_ty: {
+                        let mut ty = vec![];
+                        append_tokens_until(input, &mut ty, false, |next| match next {
+                            Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => true,
+                            Some(TokenTree::Punct(p))
+                                if p.as_char() == ','
+                                    || p.as_char() == '=' && p.spacing() == Spacing::Alone
+                                    || p.as_char() == ':' && p.spacing() == Spacing::Alone =>
+                            {
+                                true
+                            }
+                            _ => false,
+                        })?;
+                        ty.into_iter().collect()
+                    },
+                    colon_token: parse_punct(input, ':')?,
+                    bounds: {
+                        let mut bounds = Vec::new();
+                        loop {
+                            if input.is_empty()
+                                || input.peek(token::Brace)
+                                || input.peek(Token![,])
+                                || input.peek(Token![;])
+                                || input.peek(Token![:]) && !input.peek(Token![::])
+                                || input.peek(Token![=])
+                            {
+                                break;
+                            }
+
+                            let is_maybe = input.peek(Token![?]) && !input.peek2(Token![const]);
+                            let mut value = vec![];
+                            append_tokens_until(input, &mut value, false, |next| match next {
+                                Some(TokenTree::Punct(p))
+                                    if p.as_char() == ','
+                                        || p.as_char() == '>'
+                                        || p.as_char() == '='
+                                        || p.as_char() == '+' =>
+                                {
+                                    true
+                                }
+                                None => true,
+                                _ => false,
+                            })?;
+                            if !input.peek(Token![+]) {
+                                bounds.push((
+                                    TypeParamBound {
+                                        tokens: value.into_iter().collect(),
+                                        is_maybe,
+                                    },
+                                    None,
+                                ));
+                                break;
+                            }
+                            let punct = parse_punct(input, '+')?;
+                            bounds.push((
+                                TypeParamBound { tokens: value.into_iter().collect(), is_maybe },
+                                Some(punct),
+                            ));
+                        }
+                        bounds
+                    },
+                }))
+            }
+        }
+    }
+
     impl Parse for Visibility {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
             if input.peek(Token![pub]) {
@@ -680,14 +857,8 @@ mod parsing {
                 _ => false,
             })?;
 
-            let where_token = parse_kw_opt(input, "where")?;
-            if let Some(where_token) = where_token {
-                let mut where_clause = vec![where_token.into()];
-                append_tokens_until(input, &mut where_clause, false, |next| match next {
-                    Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => true,
-                    _ => false,
-                })?;
-                generics.where_clause = where_clause.into_iter().collect();
+            if input.peek(Token![where]) {
+                generics.where_clause = Some(input.parse()?);
             }
 
             let content;
@@ -802,19 +973,8 @@ mod parsing {
             let ident = input.parse()?;
             let mut generics: Generics = input.parse()?;
 
-            let where_token = parse_kw_opt(input, "where")?;
-            if let Some(where_token) = where_token {
-                let mut where_clause = vec![where_token.into()];
-                append_tokens_until(input, &mut where_clause, false, |next| match next {
-                    Some(TokenTree::Punct(p))
-                        if p.as_char() == '=' && p.spacing() == Spacing::Alone
-                            || p.as_char() == ';' && p.spacing() == Spacing::Alone =>
-                    {
-                        true
-                    }
-                    _ => false,
-                })?;
-                generics.where_clause = where_clause.into_iter().collect();
+            if input.peek(Token![where]) {
+                generics.where_clause = Some(input.parse()?);
             }
 
             let eq_token = parse_punct(input, '=')?;
@@ -902,14 +1062,8 @@ mod parsing {
 
             let output: ReturnType = input.parse()?;
 
-            let where_token = parse_kw_opt(input, "where")?;
-            if let Some(where_token) = where_token {
-                let mut where_clause = vec![where_token.into()];
-                append_tokens_until(input, &mut where_clause, false, |next| match next {
-                    Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => true,
-                    _ => false,
-                })?;
-                generics.where_clause = where_clause.into_iter().collect();
+            if input.peek(Token![where]) {
+                generics.where_clause = Some(input.parse()?);
             }
 
             Ok(Signature { before_ident, ident, generics, inputs, output: output.ty })
@@ -922,9 +1076,10 @@ pub(crate) mod printing {
     use syn::token;
 
     use super::{
-        Attribute, ConstParam, GenericParam, Generics, ImplItem, ImplItemConst, ImplItemMethod,
-        ImplItemType, ItemImpl, ItemTrait, LifetimeDef, Signature, TraitItem, TraitItemConst,
-        TraitItemMethod, TraitItemType, TypeGenerics, TypeParam, TypeParamBound, Visibility,
+        Attribute, BoundLifetimes, ConstParam, GenericParam, Generics, ImplItem, ImplItemConst,
+        ImplItemMethod, ImplItemType, ItemImpl, ItemTrait, LifetimeDef, PredicateLifetime,
+        PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType,
+        TypeGenerics, TypeParam, TypeParamBound, Visibility, WhereClause, WherePredicate,
     };
     use crate::quote::ToTokens;
 
@@ -986,6 +1141,15 @@ pub(crate) mod printing {
                 GenericParam::Lifetime(l) => l.to_tokens(tokens),
                 GenericParam::Type(t) => t.to_tokens(tokens),
             }
+        }
+    }
+
+    impl ToTokens for BoundLifetimes {
+        fn to_tokens(&self, tokens: &mut TokenStream) {
+            self.for_token.to_tokens(tokens);
+            self.lt_token.to_tokens(tokens);
+            self.lifetimes.to_tokens(tokens);
+            self.gt_token.to_tokens(tokens);
         }
     }
 
@@ -1103,6 +1267,41 @@ pub(crate) mod printing {
                 .clone()
                 .unwrap_or_else(|| punct('>', Span::call_site()))
                 .to_tokens(tokens);
+        }
+    }
+
+    impl ToTokens for WhereClause {
+        fn to_tokens(&self, tokens: &mut TokenStream) {
+            if !self.predicates.is_empty() {
+                self.where_token.to_tokens(tokens);
+                self.predicates.to_tokens(tokens);
+            }
+        }
+    }
+
+    impl ToTokens for WherePredicate {
+        fn to_tokens(&self, tokens: &mut TokenStream) {
+            match self {
+                WherePredicate::Lifetime(l) => l.to_tokens(tokens),
+                WherePredicate::Type(t) => t.to_tokens(tokens),
+            }
+        }
+    }
+
+    impl ToTokens for PredicateType {
+        fn to_tokens(&self, tokens: &mut TokenStream) {
+            self.lifetimes.to_tokens(tokens);
+            self.bounded_ty.to_tokens(tokens);
+            self.colon_token.to_tokens(tokens);
+            self.bounds.to_tokens(tokens);
+        }
+    }
+
+    impl ToTokens for PredicateLifetime {
+        fn to_tokens(&self, tokens: &mut TokenStream) {
+            self.lifetime.to_tokens(tokens);
+            self.colon_token.to_tokens(tokens);
+            self.bounds.to_tokens(tokens);
         }
     }
 

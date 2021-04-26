@@ -207,8 +207,8 @@ use syn::{
 use crate::{
     ast::{
         printing::punct, Attribute, AttributeKind, GenericParam, Generics, ImplItem, ItemImpl,
-        ItemTrait, Signature, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType, TypeParam,
-        Visibility,
+        ItemTrait, PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod,
+        TraitItemType, TypeParam, Visibility, WherePredicate,
     },
     quote::ToTokens,
 };
@@ -273,14 +273,24 @@ fn determine_trait_generics<'a>(
                 colon_token: Some(colon_token), bounds, ..
             }) = param
             {
-                let bounds = bounds
-                    .iter()
-                    .filter(|(b, _)| !b.is_maybe)
-                    .map(|(b, p)| quote! { #b #p })
-                    .collect::<TokenStream2>();
-                generics.make_where_clause().extend(quote! {
-                    Self #colon_token #bounds
-                });
+                let bounds = bounds.into_iter().filter(|(b, _)| !b.is_maybe).collect::<Vec<_>>();
+                if !bounds.is_empty() {
+                    let where_clause = generics.make_where_clause();
+                    if let Some((_, p)) = where_clause.predicates.last_mut() {
+                        p.get_or_insert_with(|| punct(',', Span::call_site()));
+                    }
+                    where_clause.predicates.push((
+                        WherePredicate::Type(PredicateType {
+                            lifetimes: None,
+                            bounded_ty: vec![TokenTree::Ident(Ident::new("Self", self_ty.span()))]
+                                .into_iter()
+                                .collect(),
+                            colon_token,
+                            bounds,
+                        }),
+                        None,
+                    ));
+                }
             }
 
             return Some(ident);
@@ -293,6 +303,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     /// Replace `self_ty` with `Self`.
     struct ReplaceParam<'a> {
         self_ty: &'a Ident,
+        remove_maybe: bool,
     }
 
     impl ReplaceParam<'_> {
@@ -381,17 +392,57 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
                     GenericParam::Const(_) | GenericParam::Lifetime(_) => {}
                 }
             }
-            self.visit_token_stream(&mut generics.where_clause);
+            if let Some(where_clause) = &mut generics.where_clause {
+                let predicates = Vec::with_capacity(where_clause.predicates.len());
+                for (mut predicate, p) in mem::replace(&mut where_clause.predicates, predicates) {
+                    match &mut predicate {
+                        WherePredicate::Type(pred) => {
+                            if self.remove_maybe {
+                                let mut iter = pred.bounded_ty.clone().into_iter();
+                                if let Some(TokenTree::Ident(i)) = iter.next() {
+                                    if iter.next().is_none() {
+                                        let s = i.to_string();
+                                        if *self.self_ty == s {
+                                            self.visit_token_stream(&mut pred.bounded_ty);
+                                            let bounds = mem::replace(&mut pred.bounds, Vec::new())
+                                                .into_iter()
+                                                .filter(|(b, _)| !b.is_maybe)
+                                                .collect::<Vec<_>>();
+                                            if !bounds.is_empty() {
+                                                pred.bounds = bounds;
+                                                for (bound, _) in &mut pred.bounds {
+                                                    self.visit_token_stream(&mut bound.tokens);
+                                                }
+                                                where_clause.predicates.push((predicate, p));
+                                            }
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+
+                            self.visit_token_stream(&mut pred.bounded_ty);
+                            for (bound, _) in &mut pred.bounds {
+                                self.visit_token_stream(&mut bound.tokens);
+                            }
+                        }
+                        WherePredicate::Lifetime(_) => {}
+                    }
+                    where_clause.predicates.push((predicate, p));
+                }
+            }
         }
     }
 
     let name = args.name.unwrap();
     let mut generics = item.generics.clone();
     let mut visitor = determine_trait_generics(&mut generics, &item.self_ty)
-        .map(|self_ty| ReplaceParam { self_ty });
+        .map(|self_ty| ReplaceParam { self_ty, remove_maybe: false });
 
     if let Some(visitor) = &mut visitor {
+        visitor.remove_maybe = true;
         visitor.visit_generics_mut(&mut generics);
+        visitor.remove_maybe = false;
     }
     let ty_generics = generics.ty_generics();
     item.trait_ = Some(quote! { #name #ty_generics for });

@@ -183,3 +183,12 @@ impl<T: ToTokens> ToTokens for [T] {
         }
     }
 }
+
+impl<T: ToTokens> ToTokens for [(T, Option<Punct>)] {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        for (t, p) in self {
+            T::to_tokens(t, tokens);
+            p.to_tokens(tokens);
+        }
+    }
+}
