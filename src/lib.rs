@@ -182,12 +182,15 @@ extern crate proc_macro;
 
 macro_rules! error {
     ($span:expr, $msg:expr) => {
-        syn::Error::new_spanned(&$span, $msg)
+        syn::Error::new(crate::quote::ToTokens::span(&$span), $msg)
     };
     ($span:expr, $($tt:tt)*) => {
         error!($span, format!($($tt)*))
     };
 }
+
+#[macro_use]
+mod quote;
 
 mod ast;
 mod iter;
@@ -196,15 +199,18 @@ use std::{collections::hash_map::DefaultHasher, hash::Hasher, iter::FromIterator
 
 use proc_macro::TokenStream;
 use proc_macro2::{Group, Spacing, Span, TokenStream as TokenStream2, TokenTree};
-use quote::{quote, quote_spanned, ToTokens};
 use syn::{
     parse::{Parse, ParseStream},
     token, Error, Ident, Result,
 };
 
-use crate::ast::{
-    Attribute, AttributeKind, GenericParam, Generics, ImplItem, ItemImpl, ItemTrait, Signature,
-    TraitItem, TraitItemConst, TraitItemMethod, TraitItemType, TypeParam, Visibility,
+use crate::{
+    ast::{
+        printing::punct, Attribute, AttributeKind, GenericParam, Generics, ImplItem, ItemImpl,
+        ItemTrait, Signature, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType, TypeParam,
+        Visibility,
+    },
+    quote::ToTokens,
 };
 
 /// An attribute macro for easily writing [extension trait pattern][rfc0445].
@@ -222,9 +228,9 @@ pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut item: ItemImpl = syn::parse_macro_input!(input);
 
     trait_from_impl(&mut item, args)
-        .map(ToTokens::into_token_stream)
+        .map(|t| t.to_token_stream())
         .map(|mut tokens| {
-            tokens.extend(item.into_token_stream());
+            tokens.extend(item.to_token_stream());
             tokens
         })
         .unwrap_or_else(Error::into_compile_error)
@@ -267,10 +273,13 @@ fn determine_trait_generics<'a>(
                 colon_token: Some(colon_token), bounds, ..
             }) = param
             {
-                let bounds =
-                    bounds.iter().filter(|(b, _)| !b.is_maybe).map(|(b, p)| quote! { #b #p });
+                let bounds = bounds
+                    .iter()
+                    .filter(|(b, _)| !b.is_maybe)
+                    .map(|(b, p)| quote! { #b #p })
+                    .collect::<TokenStream2>();
                 generics.make_where_clause().extend(quote! {
-                    Self #colon_token #(#bounds)*
+                    Self #colon_token #bounds
                 });
             }
 
@@ -305,7 +314,11 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
                                     match iter.peek() {
                                         Some(TokenTree::Punct(p)) if p.as_char() == ':' => {
                                             let span = ident.span();
-                                            out.extend(quote_spanned!(span=> <#self_>))
+                                            out.extend(vec![
+                                                TokenTree::Punct(punct('<', span)),
+                                                self_.into(),
+                                                punct('>', span).into(),
+                                            ])
                                         }
                                         _ => out.push(self_.into()),
                                     }

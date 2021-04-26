@@ -297,7 +297,6 @@ pub(crate) struct TraitItemType {
 
 mod parsing {
     use proc_macro2::{Delimiter, Group, Literal, Punct, Spacing, TokenStream, TokenTree};
-    use quote::ToTokens;
     use syn::{
         braced,
         ext::IdentExt,
@@ -309,6 +308,7 @@ mod parsing {
         Attribute, ConstParam, GenericParam, Generics, ImplItem, ImplItemConst, ImplItemMethod,
         ImplItemType, ItemImpl, LifetimeDef, Signature, TypeParam, TypeParamBound, Visibility,
     };
+    use crate::quote::ToTokens;
 
     pub(crate) fn parse_group(input: ParseStream<'_>, delimiter: Delimiter) -> Result<Group> {
         let (ok, ch) = match delimiter {
@@ -918,14 +918,15 @@ mod parsing {
 }
 
 pub(crate) mod printing {
-    use proc_macro2::{Punct, Spacing, Span, TokenStream};
-    use quote::{ToTokens, TokenStreamExt};
+    use proc_macro2::{Delimiter, Group, Punct, Spacing, Span, TokenStream};
+    use syn::token;
 
     use super::{
         Attribute, ConstParam, GenericParam, Generics, ImplItem, ImplItemConst, ImplItemMethod,
         ImplItemType, ItemImpl, ItemTrait, LifetimeDef, Signature, TraitItem, TraitItemConst,
         TraitItemMethod, TraitItemType, TypeGenerics, TypeParam, TypeParamBound, Visibility,
     };
+    use crate::quote::ToTokens;
 
     pub(crate) fn punct(ch: char, span: Span) -> Punct {
         let mut p = Punct::new(ch, Spacing::Alone);
@@ -990,7 +991,7 @@ pub(crate) mod printing {
 
     impl ToTokens for LifetimeDef {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.lifetime.to_tokens(tokens);
             if !self.bounds.is_empty() {
                 self.colon_token
@@ -1004,7 +1005,7 @@ pub(crate) mod printing {
 
     impl ToTokens for TypeParam {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.ident.to_tokens(tokens);
             if !self.bounds.is_empty() {
                 self.colon_token
@@ -1034,7 +1035,7 @@ pub(crate) mod printing {
 
     impl ToTokens for ConstParam {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.const_token.to_tokens(tokens);
             self.ident.to_tokens(tokens);
             self.colon_token.to_tokens(tokens);
@@ -1126,35 +1127,58 @@ pub(crate) mod printing {
         }
     }
 
+    fn delim<F>(s: &str, span: Span, tokens: &mut TokenStream, f: F)
+    where
+        F: FnOnce(&mut TokenStream),
+    {
+        let delim = match s {
+            "(" => Delimiter::Parenthesis,
+            "[" => Delimiter::Bracket,
+            "{" => Delimiter::Brace,
+            " " => Delimiter::None,
+            _ => panic!("unknown delimiter: {}", s),
+        };
+        let mut inner = TokenStream::new();
+        f(&mut inner);
+        let mut g = Group::new(delim, inner);
+        g.set_span(span);
+        g.to_tokens(tokens);
+    }
+
+    fn surround<F>(brace: &token::Brace, tokens: &mut TokenStream, f: F)
+    where
+        F: FnOnce(&mut TokenStream),
+    {
+        delim("{", brace.span, tokens, f);
+    }
+
     impl ToTokens for ItemTrait {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.vis.to_tokens(tokens);
             self.unsafety.to_tokens(tokens);
             self.trait_token.to_tokens(tokens);
             self.ident.to_tokens(tokens);
             self.generics.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
-            self.brace_token.surround(tokens, |tokens| {
-                tokens.append_all(&self.items);
+            surround(&self.brace_token, tokens, |tokens| {
+                self.items.to_tokens(tokens);
             });
         }
     }
 
     impl ToTokens for ItemImpl {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.defaultness.to_tokens(tokens);
             self.unsafety.to_tokens(tokens);
             self.impl_token.to_tokens(tokens);
             self.generics.to_tokens(tokens);
-            if let Some(t) = &self.trait_ {
-                t.to_tokens(tokens);
-            }
-            tokens.append_all(&self.self_ty);
+            self.trait_.to_tokens(tokens);
+            self.self_ty.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
-            self.brace_token.surround(tokens, |tokens| {
-                tokens.append_all(&self.items);
+            surround(&self.brace_token, tokens, |tokens| {
+                self.items.to_tokens(tokens);
             });
         }
     }
@@ -1171,7 +1195,7 @@ pub(crate) mod printing {
 
     impl ToTokens for TraitItemConst {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.const_token.to_tokens(tokens);
             self.ident.to_tokens(tokens);
             self.colon_token.to_tokens(tokens);
@@ -1182,7 +1206,7 @@ pub(crate) mod printing {
 
     impl ToTokens for TraitItemMethod {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.sig.to_tokens(tokens);
             self.semi_token.to_tokens(tokens);
         }
@@ -1190,7 +1214,7 @@ pub(crate) mod printing {
 
     impl ToTokens for TraitItemType {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.type_token.to_tokens(tokens);
             self.ident.to_tokens(tokens);
             self.generics.to_tokens(tokens);
@@ -1211,7 +1235,7 @@ pub(crate) mod printing {
 
     impl ToTokens for ImplItemConst {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.vis.to_tokens(tokens);
             self.defaultness.to_tokens(tokens);
             self.const_token.to_tokens(tokens);
@@ -1219,14 +1243,14 @@ pub(crate) mod printing {
             self.colon_token.to_tokens(tokens);
             self.ty.to_tokens(tokens);
             self.eq_token.to_tokens(tokens);
-            tokens.append_all(&self.expr);
+            self.expr.to_tokens(tokens);
             self.semi_token.to_tokens(tokens);
         }
     }
 
     impl ToTokens for ImplItemMethod {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.vis.to_tokens(tokens);
             self.defaultness.to_tokens(tokens);
             self.sig.to_tokens(tokens);
@@ -1236,7 +1260,7 @@ pub(crate) mod printing {
 
     impl ToTokens for ImplItemType {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.attrs);
+            self.attrs.to_tokens(tokens);
             self.vis.to_tokens(tokens);
             self.defaultness.to_tokens(tokens);
             self.type_token.to_tokens(tokens);
@@ -1244,14 +1268,14 @@ pub(crate) mod printing {
             self.generics.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
             self.eq_token.to_tokens(tokens);
-            tokens.append_all(&self.ty);
+            self.ty.to_tokens(tokens);
             self.semi_token.to_tokens(tokens);
         }
     }
 
     impl ToTokens for Signature {
         fn to_tokens(&self, tokens: &mut TokenStream) {
-            tokens.append_all(&self.before_ident);
+            self.before_ident.to_tokens(tokens);
             self.ident.to_tokens(tokens);
             self.generics.to_tokens(tokens);
             self.inputs.to_tokens(tokens);
