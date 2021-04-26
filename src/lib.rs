@@ -182,32 +182,35 @@ extern crate proc_macro;
 
 macro_rules! error {
     ($span:expr, $msg:expr) => {
-        syn::Error::new_spanned(&$span, $msg)
+        syn::Error::new(crate::quote::ToTokens::span(&$span), $msg)
     };
     ($span:expr, $($tt:tt)*) => {
         error!($span, format!($($tt)*))
     };
 }
 
+#[macro_use]
+mod quote;
+
 mod ast;
+mod iter;
 
 use std::{collections::hash_map::DefaultHasher, hash::Hasher, iter::FromIterator, mem};
 
 use proc_macro::TokenStream;
-use proc_macro2::{Group, Spacing, TokenStream as TokenStream2, TokenTree};
-use quote::{format_ident, quote_spanned, ToTokens};
+use proc_macro2::{Group, Spacing, Span, TokenStream as TokenStream2, TokenTree};
 use syn::{
     parse::{Parse, ParseStream},
-    parse_quote,
-    punctuated::Punctuated,
-    Attribute, Error, Expr, GenericArgument, GenericParam, Generics, Ident, Macro, Path,
-    PathArguments, PredicateType, Result, ReturnType, Token, Type, TypeParam, TypeParamBound,
-    TypePath, Visibility, WherePredicate,
+    token, Error, Ident, Result,
 };
 
-use crate::ast::{
-    ImplItem, ItemImpl, ItemTrait, Signature, TraitItem, TraitItemConst, TraitItemMethod,
-    TraitItemType,
+use crate::{
+    ast::{
+        printing::punct, Attribute, AttributeKind, GenericParam, Generics, ImplItem, ItemImpl,
+        ItemTrait, PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod,
+        TraitItemType, TypeParam, Visibility, WherePredicate,
+    },
+    quote::ToTokens,
 };
 
 /// An attribute macro for easily writing [extension trait pattern][rfc0445].
@@ -219,15 +222,15 @@ use crate::ast::{
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     let mut args: Args = syn::parse_macro_input!(args);
     if args.name.is_none() {
-        args.name = Some(format_ident!("__ExtTrait{}", hash(&input)));
+        args.name = Some(Ident::new(&format!("__ExtTrait{}", hash(&input)), Span::call_site()));
     }
 
     let mut item: ItemImpl = syn::parse_macro_input!(input);
 
     trait_from_impl(&mut item, args)
-        .map(ToTokens::into_token_stream)
+        .map(|t| t.to_token_stream())
         .map(|mut tokens| {
-            tokens.extend(item.into_token_stream());
+            tokens.extend(item.to_token_stream());
             tokens
         })
         .unwrap_or_else(Error::into_compile_error)
@@ -245,41 +248,52 @@ impl Parse for Args {
     fn parse(input: ParseStream<'_>) -> Result<Self> {
         let vis: Visibility = input.parse()?;
         let name: Option<Ident> = input.parse()?;
-        Ok(Args { vis: if let Visibility::Inherited = vis { None } else { Some(vis) }, name })
+        Ok(Args { vis: if vis.is_inherited() { None } else { Some(vis) }, name })
     }
 }
 
-fn determine_trait_generics<'a>(generics: &mut Generics, self_ty: &'a Type) -> Option<&'a Ident> {
-    if let Type::Path(TypePath { path, qself: None }) = self_ty {
-        if let Some(ident) = path.get_ident() {
-            let i = generics.params.iter().position(|param| {
-                if let GenericParam::Type(param) = param { param.ident == *ident } else { false }
-            });
-            if let Some(i) = i {
-                let mut params = mem::replace(&mut generics.params, Punctuated::new())
-                    .into_iter()
-                    .collect::<Vec<_>>();
-                let param = params.remove(i);
-                generics.params = params.into_iter().collect();
+fn determine_trait_generics<'a>(
+    generics: &mut Generics,
+    self_ty: &'a [TokenTree],
+) -> Option<&'a Ident> {
+    if self_ty.len() != 1 {
+        return None;
+    }
+    if let TokenTree::Ident(ident) = &self_ty[0] {
+        let i = generics.params.iter().position(|(param, _)| {
+            if let GenericParam::Type(param) = param { param.ident == *ident } else { false }
+        });
+        if let Some(i) = i {
+            let mut params =
+                mem::replace(&mut generics.params, Vec::new()).into_iter().collect::<Vec<_>>();
+            let (param, _) = params.remove(i);
+            generics.params = params.into_iter().collect();
 
-                if let GenericParam::Type(TypeParam {
-                    colon_token: Some(colon_token),
-                    bounds,
-                    ..
-                }) = param
-                {
-                    generics.make_where_clause().predicates.push(WherePredicate::Type(
-                        PredicateType {
+            if let GenericParam::Type(TypeParam {
+                colon_token: Some(colon_token), bounds, ..
+            }) = param
+            {
+                let bounds = bounds.into_iter().filter(|(b, _)| !b.is_maybe).collect::<Vec<_>>();
+                if !bounds.is_empty() {
+                    let where_clause = generics.make_where_clause();
+                    if let Some((_, p)) = where_clause.predicates.last_mut() {
+                        p.get_or_insert_with(|| punct(',', Span::call_site()));
+                    }
+                    where_clause.predicates.push((
+                        WherePredicate::Type(PredicateType {
                             lifetimes: None,
-                            bounded_ty: parse_quote!(Self),
+                            bounded_ty: vec![TokenTree::Ident(Ident::new("Self", self_ty.span()))]
+                                .into_iter()
+                                .collect(),
                             colon_token,
                             bounds,
-                        },
+                        }),
+                        None,
                     ));
                 }
-
-                return Some(ident);
             }
+
+            return Some(ident);
         }
     }
     None
@@ -289,15 +303,10 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     /// Replace `self_ty` with `Self`.
     struct ReplaceParam<'a> {
         self_ty: &'a Ident,
+        remove_maybe: bool,
     }
 
     impl ReplaceParam<'_> {
-        fn visit_ident_mut(&mut self, ident: &mut Ident) {
-            if *ident == *self.self_ty {
-                *ident = Ident::new("Self", ident.span());
-            }
-        }
-
         fn visit_token_stream(&self, tokens: &mut TokenStream2) -> bool {
             let mut out: Vec<TokenTree> = Vec::new();
             let mut modified = false;
@@ -316,7 +325,11 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
                                     match iter.peek() {
                                         Some(TokenTree::Punct(p)) if p.as_char() == ':' => {
                                             let span = ident.span();
-                                            out.extend(quote_spanned!(span=> <#self_>))
+                                            out.extend(vec![
+                                                TokenTree::Punct(punct('<', span)),
+                                                self_.into(),
+                                                punct('>', span).into(),
+                                            ])
                                         }
                                         _ => out.push(self_.into()),
                                     }
@@ -349,7 +362,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         fn visit_trait_item_mut(&mut self, node: &mut TraitItem) {
             match node {
                 TraitItem::Const(node) => {
-                    self.visit_type_mut(&mut node.ty);
+                    self.visit_token_stream(&mut node.ty);
                 }
                 TraitItem::Method(node) => {
                     self.visit_signature_mut(&mut node.sig);
@@ -363,192 +376,76 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         fn visit_signature_mut(&mut self, node: &mut Signature) {
             self.visit_generics_mut(&mut node.generics);
             self.visit_token_stream(&mut node.inputs);
-            self.visit_return_type_mut(&mut node.output);
-        }
-
-        fn visit_type_mut(&mut self, ty: &mut Type) {
-            match ty {
-                Type::Array(ty) => {
-                    self.visit_type_mut(&mut ty.elem);
-                    self.visit_expr_mut(&mut ty.len);
-                }
-                Type::BareFn(ty) => {
-                    for arg in &mut ty.inputs {
-                        self.visit_type_mut(&mut arg.ty);
-                    }
-                    self.visit_return_type_mut(&mut ty.output);
-                }
-                Type::Group(ty) => {
-                    self.visit_type_mut(&mut ty.elem);
-                }
-                Type::ImplTrait(ty) => {
-                    for bound in &mut ty.bounds {
-                        self.visit_type_param_bound_mut(bound);
-                    }
-                }
-                Type::Macro(ty) => {
-                    self.visit_macro_mut(&mut ty.mac);
-                }
-                Type::Paren(ty) => {
-                    self.visit_type_mut(&mut ty.elem);
-                }
-                Type::Path(ty) => {
-                    if let Some(qself) = &mut ty.qself {
-                        self.visit_type_mut(&mut qself.ty);
-                    }
-                    self.visit_path_mut(&mut ty.path);
-                }
-                Type::Ptr(ty) => {
-                    self.visit_type_mut(&mut ty.elem);
-                }
-                Type::Reference(ty) => {
-                    self.visit_type_mut(&mut ty.elem);
-                }
-                Type::Slice(ty) => {
-                    self.visit_type_mut(&mut ty.elem);
-                }
-                Type::TraitObject(ty) => {
-                    for bound in &mut ty.bounds {
-                        self.visit_type_param_bound_mut(bound);
-                    }
-                }
-                Type::Tuple(ty) => {
-                    for elem in &mut ty.elems {
-                        self.visit_type_mut(elem);
-                    }
-                }
-
-                Type::Infer(_) | Type::Never(_) | Type::Verbatim(_) => {}
-                _ => {}
-            }
-        }
-
-        fn visit_path_mut(&mut self, path: &mut Path) {
-            for segment in &mut path.segments {
-                self.visit_ident_mut(&mut segment.ident);
-                self.visit_path_arguments_mut(&mut segment.arguments);
-            }
-        }
-
-        fn visit_path_arguments_mut(&mut self, arguments: &mut PathArguments) {
-            match arguments {
-                PathArguments::None => {}
-                PathArguments::AngleBracketed(arguments) => {
-                    for arg in &mut arguments.args {
-                        match arg {
-                            GenericArgument::Type(arg) => self.visit_type_mut(arg),
-                            GenericArgument::Binding(arg) => self.visit_type_mut(&mut arg.ty),
-                            GenericArgument::Constraint(arg) => {
-                                for bound in &mut arg.bounds {
-                                    self.visit_type_param_bound_mut(bound);
-                                }
-                            }
-                            GenericArgument::Const(_) | GenericArgument::Lifetime(_) => {}
-                        }
-                    }
-                }
-                PathArguments::Parenthesized(arguments) => {
-                    for argument in &mut arguments.inputs {
-                        self.visit_type_mut(argument);
-                    }
-                    self.visit_return_type_mut(&mut arguments.output);
-                }
-            }
-        }
-
-        fn visit_return_type_mut(&mut self, return_type: &mut ReturnType) {
-            match return_type {
-                ReturnType::Default => {}
-                ReturnType::Type(_, output) => self.visit_type_mut(output),
-            }
-        }
-
-        fn visit_type_param_bound_mut(&mut self, bound: &mut TypeParamBound) {
-            match bound {
-                TypeParamBound::Trait(bound) => self.visit_path_mut(&mut bound.path),
-                TypeParamBound::Lifetime(_) => {}
+            if let Some(ty) = &mut node.output {
+                self.visit_token_stream(ty);
             }
         }
 
         fn visit_generics_mut(&mut self, generics: &mut Generics) {
-            for param in &mut generics.params {
+            for (param, _) in &mut generics.params {
                 match param {
                     GenericParam::Type(param) => {
-                        for bound in &mut param.bounds {
-                            self.visit_type_param_bound_mut(bound);
+                        for (bound, _) in &mut param.bounds {
+                            self.visit_token_stream(&mut bound.tokens);
                         }
                     }
                     GenericParam::Const(_) | GenericParam::Lifetime(_) => {}
                 }
             }
             if let Some(where_clause) = &mut generics.where_clause {
-                for predicate in &mut where_clause.predicates {
-                    match predicate {
-                        WherePredicate::Type(predicate) => {
-                            self.visit_type_mut(&mut predicate.bounded_ty);
-                            for bound in &mut predicate.bounds {
-                                self.visit_type_param_bound_mut(bound);
+                let predicates = Vec::with_capacity(where_clause.predicates.len());
+                for (mut predicate, p) in mem::replace(&mut where_clause.predicates, predicates) {
+                    match &mut predicate {
+                        WherePredicate::Type(pred) => {
+                            if self.remove_maybe {
+                                let mut iter = pred.bounded_ty.clone().into_iter();
+                                if let Some(TokenTree::Ident(i)) = iter.next() {
+                                    if iter.next().is_none() {
+                                        let s = i.to_string();
+                                        if *self.self_ty == s {
+                                            self.visit_token_stream(&mut pred.bounded_ty);
+                                            let bounds = mem::replace(&mut pred.bounds, Vec::new())
+                                                .into_iter()
+                                                .filter(|(b, _)| !b.is_maybe)
+                                                .collect::<Vec<_>>();
+                                            if !bounds.is_empty() {
+                                                pred.bounds = bounds;
+                                                for (bound, _) in &mut pred.bounds {
+                                                    self.visit_token_stream(&mut bound.tokens);
+                                                }
+                                                where_clause.predicates.push((predicate, p));
+                                            }
+                                            continue;
+                                        }
+                                    }
+                                }
+                            }
+
+                            self.visit_token_stream(&mut pred.bounded_ty);
+                            for (bound, _) in &mut pred.bounds {
+                                self.visit_token_stream(&mut bound.tokens);
                             }
                         }
-                        WherePredicate::Lifetime(_) | WherePredicate::Eq(_) => {}
+                        WherePredicate::Lifetime(_) => {}
                     }
+                    where_clause.predicates.push((predicate, p));
                 }
             }
         }
-
-        fn visit_expr_mut(&mut self, expr: &mut Expr) {
-            match expr {
-                Expr::Binary(expr) => {
-                    self.visit_expr_mut(&mut expr.left);
-                    self.visit_expr_mut(&mut expr.right);
-                }
-                Expr::Call(expr) => {
-                    self.visit_expr_mut(&mut expr.func);
-                    for arg in &mut expr.args {
-                        self.visit_expr_mut(arg);
-                    }
-                }
-                Expr::Cast(expr) => {
-                    self.visit_expr_mut(&mut expr.expr);
-                    self.visit_type_mut(&mut expr.ty);
-                }
-                Expr::Field(expr) => {
-                    self.visit_expr_mut(&mut expr.base);
-                }
-                Expr::Index(expr) => {
-                    self.visit_expr_mut(&mut expr.expr);
-                    self.visit_expr_mut(&mut expr.index);
-                }
-                Expr::Paren(expr) => {
-                    self.visit_expr_mut(&mut expr.expr);
-                }
-                Expr::Path(expr) => {
-                    if let Some(qself) = &mut expr.qself {
-                        self.visit_type_mut(&mut qself.ty);
-                    }
-                    self.visit_path_mut(&mut expr.path);
-                }
-                Expr::Unary(expr) => {
-                    self.visit_expr_mut(&mut expr.expr);
-                }
-                _ => {}
-            }
-        }
-
-        fn visit_macro_mut(&mut self, _mac: &mut Macro) {}
     }
 
     let name = args.name.unwrap();
     let mut generics = item.generics.clone();
     let mut visitor = determine_trait_generics(&mut generics, &item.self_ty)
-        .map(|self_ty| ReplaceParam { self_ty });
+        .map(|self_ty| ReplaceParam { self_ty, remove_maybe: false });
 
     if let Some(visitor) = &mut visitor {
+        visitor.remove_maybe = true;
         visitor.visit_generics_mut(&mut generics);
+        visitor.remove_maybe = false;
     }
-    let ty_generics = generics.split_for_impl().1;
-    let trait_ = parse_quote!(#name #ty_generics);
-    item.trait_ = Some((trait_, <Token![for]>::default()));
+    let ty_generics = generics.ty_generics();
+    item.trait_ = Some(quote! { #name #ty_generics for });
 
     // impl-level visibility
     let impl_vis = args.vis;
@@ -565,18 +462,18 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     })?;
 
     let mut attrs = item.attrs.clone();
-    find_remove(&mut item.attrs, "doc"); // https://github.com/taiki-e/easy-ext/issues/20
-    attrs.push(parse_quote!(#[allow(patterns_in_fns_without_body)])); // mut self
+    find_remove(&mut item.attrs, AttributeKind::Doc); // https://github.com/taiki-e/easy-ext/issues/20
+    attrs.push(Attribute::new(quote!(allow(patterns_in_fns_without_body)))); // mut self
 
     Ok(ItemTrait {
         attrs,
         // priority: impl-level visibility > assoc-item-level visibility > inherited visibility
         vis: impl_vis.unwrap_or_else(|| assoc_vis.unwrap_or(Visibility::Inherited)),
-        unsafety: item.unsafety,
-        trait_token: Token![trait](item.impl_token.span),
+        unsafety: item.unsafety.clone(),
+        trait_token: Ident::new("trait", item.impl_token.span()),
         ident: name,
         generics,
-        brace_token: item.brace_token,
+        brace_token: token::Brace(item.brace_token.span),
         items,
     })
 }
@@ -586,18 +483,6 @@ fn trait_item_from_impl_item(
     prev_vis: &mut Option<Visibility>,
     impl_vis: &Option<Visibility>,
 ) -> Result<TraitItem> {
-    fn compare_visibility(x: &Visibility, y: &Visibility) -> bool {
-        match (x, y) {
-            (Visibility::Public(_), Visibility::Public(_))
-            | (Visibility::Crate(_), Visibility::Crate(_))
-            | (Visibility::Inherited, Visibility::Inherited) => true,
-            (Visibility::Restricted(x), Visibility::Restricted(y)) => {
-                x.to_token_stream().to_string() == y.to_token_stream().to_string()
-            }
-            _ => false,
-        }
-    }
-
     fn check_visibility(
         current: Visibility,
         prev: &mut Option<Visibility>,
@@ -605,7 +490,7 @@ fn trait_item_from_impl_item(
         span: &dyn ToTokens,
     ) -> Result<()> {
         if impl_vis.is_some() {
-            return if let Visibility::Inherited = current {
+            return if current.is_inherited() {
                 Ok(())
             } else {
                 Err(error!(current, "all associated items must have inherited visibility"))
@@ -613,15 +498,14 @@ fn trait_item_from_impl_item(
         }
         match prev {
             None => *prev = Some(current),
-            Some(prev) if compare_visibility(prev, &current) => {}
+            Some(prev) if *prev == current => {}
             Some(prev) => {
-                return if let Visibility::Inherited = prev {
+                return if prev.is_inherited() {
                     Err(error!(current, "all associated items must have inherited visibility"))
                 } else {
                     Err(error!(
-                        if let Visibility::Inherited = current { span } else { &current },
-                        "all associated items must have a visibility of `{}`",
-                        prev.to_token_stream(),
+                        if current.is_inherited() { span } else { &current },
+                        "all associated items must have a visibility of `{}`", prev,
                     ))
                 };
             }
@@ -635,14 +519,14 @@ fn trait_item_from_impl_item(
             check_visibility(vis, prev_vis, impl_vis, &impl_const.ident)?;
 
             let attrs = impl_const.attrs.clone();
-            find_remove(&mut impl_const.attrs, "doc"); // https://github.com/taiki-e/easy-ext/issues/20
+            find_remove(&mut impl_const.attrs, AttributeKind::Doc); // https://github.com/taiki-e/easy-ext/issues/20
             Ok(TraitItem::Const(TraitItemConst {
                 attrs,
-                const_token: impl_const.const_token,
+                const_token: impl_const.const_token.clone(),
                 ident: impl_const.ident.clone(),
-                colon_token: impl_const.colon_token,
+                colon_token: impl_const.colon_token.clone(),
                 ty: impl_const.ty.clone(),
-                semi_token: impl_const.semi_token,
+                semi_token: impl_const.semi_token.clone(),
             }))
         }
         ImplItem::Type(impl_type) => {
@@ -650,13 +534,13 @@ fn trait_item_from_impl_item(
             check_visibility(vis, prev_vis, impl_vis, &impl_type.ident)?;
 
             let attrs = impl_type.attrs.clone();
-            find_remove(&mut impl_type.attrs, "doc"); // https://github.com/taiki-e/easy-ext/issues/20
+            find_remove(&mut impl_type.attrs, AttributeKind::Doc); // https://github.com/taiki-e/easy-ext/issues/20
             Ok(TraitItem::Type(TraitItemType {
                 attrs,
-                type_token: impl_type.type_token,
+                type_token: impl_type.type_token.clone(),
                 ident: impl_type.ident.clone(),
                 generics: impl_type.generics.clone(),
-                semi_token: impl_type.semi_token,
+                semi_token: impl_type.semi_token.clone(),
             }))
         }
         ImplItem::Method(impl_method) => {
@@ -664,19 +548,19 @@ fn trait_item_from_impl_item(
             check_visibility(vis, prev_vis, impl_vis, &impl_method.sig.ident)?;
 
             let mut attrs = impl_method.attrs.clone();
-            find_remove(&mut impl_method.attrs, "doc"); // https://github.com/taiki-e/easy-ext/issues/20
-            find_remove(&mut attrs, "inline"); // `#[inline]` is ignored on function prototypes
+            find_remove(&mut impl_method.attrs, AttributeKind::Doc); // https://github.com/taiki-e/easy-ext/issues/20
+            find_remove(&mut attrs, AttributeKind::Inline); // `#[inline]` is ignored on function prototypes
             Ok(TraitItem::Method(TraitItemMethod {
                 attrs,
                 sig: impl_method.sig.clone(),
-                semi_token: Token![;](impl_method.brace_token.span),
+                semi_token: ast::printing::punct(';', impl_method.body.span()),
             }))
         }
     }
 }
 
-fn find_remove(attrs: &mut Vec<Attribute>, ident: &str) {
-    while let Some(i) = attrs.iter().position(|attr| attr.path.is_ident(ident)) {
+fn find_remove(attrs: &mut Vec<Attribute>, kind: AttributeKind) {
+    while let Some(i) = attrs.iter().position(|attr| attr.kind == kind) {
         attrs.remove(i);
     }
 }

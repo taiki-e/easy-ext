@@ -1,0 +1,20 @@
+error[E0726]: implicit elided lifetime not allowed here
+  --> $DIR/min_specialization.rs:18:17
+   |
+18 |     impl<'a, T> SpecFromIter<T> for std::slice::Iter<'a, T> {
+   |                 ^^^^^^^^^^^^^^^ help: indicate the anonymous lifetime: `SpecFromIter<'_, T>`
+
+error[E0495]: cannot infer an appropriate lifetime for lifetime parameter `'a` due to conflicting requirements
+   |
+note: first, the lifetime cannot outlive the lifetime `'a` as defined on the impl at 18:10...
+  --> $DIR/min_specialization.rs:18:10
+   |
+18 |     impl<'a, T> SpecFromIter<T> for std::slice::Iter<'a, T> {
+   |          ^^
+   = note: ...so that the types are compatible
+   = note: expected `Iterator`
+              found `Iterator`
+   = note: but, the lifetime must be valid for the static lifetime...
+   = note: ...so that the types are compatible
+   = note: expected `SpecFromIter<'static, T>`
+              found `SpecFromIter<'_, T>`
