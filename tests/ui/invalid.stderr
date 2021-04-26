@@ -45,3 +45,15 @@ error: all associated items must have inherited visibility
    |
 49 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
    |         ^^^
+
+error: all associated items must have inherited visibility
+  --> $DIR/invalid.rs:56:9
+   |
+56 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+   |         ^^^
+
+error: visibility can only be specified once
+  --> $DIR/invalid.rs:59:11
+   |
+59 |     #[ext(pub ImplLevel3)] //~ ERROR visibility can only be specified once
+   |           ^^^

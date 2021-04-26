@@ -225,6 +225,7 @@ impl fmt::Display for Visibility {
 
 pub(crate) struct ItemImpl {
     pub(crate) attrs: Vec<Attribute>,
+    pub(crate) vis: Visibility,
     defaultness: Option<Ident>,
     pub(crate) unsafety: Option<Ident>,
     pub(crate) impl_token: Ident,
@@ -835,6 +836,7 @@ mod parsing {
     impl Parse for ItemImpl {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
             let attrs = input.call(Attribute::parse_outer)?;
+            let vis: Visibility = input.parse()?;
             let defaultness = parse_kw_opt(input, "default")?;
             let unsafety = parse_kw_opt(input, "unsafe")?;
             let impl_token = parse_kw(&input, "impl")?;
@@ -871,6 +873,7 @@ mod parsing {
 
             Ok(ItemImpl {
                 attrs,
+                vis,
                 defaultness,
                 unsafety,
                 impl_token,

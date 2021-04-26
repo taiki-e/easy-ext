@@ -42,11 +42,23 @@ mod visibility {
         pub type Assoc2 = (); //~ ERROR all associated items must have a visibility of `pub(crate)`
     }
 
-    #[ext(pub ImplLevel1)]
+    #[ext(ImplLevel1)]
+    pub impl str {
+        fn assoc1(&self) {}
+
+        pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+    }
+
+    #[ext(pub ImplLevel2)]
     impl str {
         fn assoc1(&self) {}
 
         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+    }
+
+    #[ext(pub ImplLevel3)] //~ ERROR visibility can only be specified once
+    pub impl str {
+        fn assoc(&self) {}
     }
 }
 
