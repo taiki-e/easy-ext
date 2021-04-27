@@ -1,11 +1,11 @@
-// Based on https://github.com/dtolnay/syn/blob/1.0.65/src/item.rs
+// Based on:
+// - https://github.com/dtolnay/syn/blob/1.0.70/src/item.rs
+// - https://github.com/dtolnay/syn/blob/1.0.70/src/generics.rs
 
 use std::fmt;
 
 use proc_macro2::{Delimiter, Group, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
-use syn::{parse::ParseStream, token, Lifetime, Result, Token};
-
-use crate::iter::TokenIter;
+use syn::Lifetime;
 
 #[derive(Clone)]
 pub(crate) struct Generics {
@@ -58,6 +58,12 @@ pub(crate) struct TypeParam {
 pub(crate) struct TypeParamBound {
     pub(crate) tokens: TokenStream,
     pub(crate) is_maybe: bool,
+}
+
+impl TypeParamBound {
+    fn new(tokens: Vec<TokenTree>, is_maybe: bool) -> Self {
+        Self { tokens: tokens.into_iter().collect(), is_maybe }
+    }
 }
 
 #[derive(Clone)]
@@ -143,33 +149,6 @@ impl Attribute {
             kind: AttributeKind::Other,
         }
     }
-
-    fn parse_outer(input: ParseStream<'_>) -> Result<Vec<Self>> {
-        let mut attrs = Vec::new();
-        while input.peek(Token![#]) {
-            attrs.push(input.call(|input| {
-                let pound_token = input.parse()?;
-                let tokens: Group = parsing::parse_group(input, Delimiter::Bracket)?;
-                let mut kind = AttributeKind::Other;
-                let mut iter = TokenIter::new(tokens.stream());
-                if let Some(TokenTree::Ident(i)) = iter.next() {
-                    match iter.next() {
-                        // ignore #[path ...]
-                        Some(TokenTree::Punct(ref p))
-                            if p.as_char() == ':' && p.spacing() == Spacing::Joint => {}
-                        _ => match &*i.to_string() {
-                            "doc" => kind = AttributeKind::Doc,
-                            "inline" => kind = AttributeKind::Inline,
-                            _ => {}
-                        },
-                    }
-                }
-
-                Ok(Attribute { pound_token, tokens, kind })
-            })?);
-        }
-        Ok(attrs)
-    }
 }
 
 #[derive(Clone)]
@@ -206,12 +185,6 @@ impl PartialEq for Visibility {
     }
 }
 
-impl Default for Visibility {
-    fn default() -> Self {
-        Visibility::Inherited
-    }
-}
-
 impl fmt::Display for Visibility {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -226,13 +199,13 @@ impl fmt::Display for Visibility {
 pub(crate) struct ItemImpl {
     pub(crate) attrs: Vec<Attribute>,
     pub(crate) vis: Visibility,
-    defaultness: Option<Ident>,
+    pub(crate) defaultness: Option<Ident>,
     pub(crate) unsafety: Option<Ident>,
     pub(crate) impl_token: Ident,
     pub(crate) generics: Generics,
     pub(crate) trait_: Option<(Ident, TokenStream, Ident)>,
     pub(crate) self_ty: Vec<TokenTree>,
-    pub(crate) brace_token: token::Brace,
+    pub(crate) brace_token: Span,
     pub(crate) items: Vec<ImplItem>,
 }
 
@@ -245,20 +218,20 @@ pub(crate) enum ImplItem {
 pub(crate) struct ImplItemConst {
     pub(crate) attrs: Vec<Attribute>,
     pub(crate) vis: Visibility,
-    defaultness: Option<Ident>,
+    pub(crate) defaultness: Option<Ident>,
     pub(crate) const_token: Ident,
     pub(crate) ident: Ident,
     pub(crate) colon_token: Punct,
     pub(crate) ty: TokenStream,
-    eq_token: Punct,
-    expr: Vec<TokenTree>,
+    pub(crate) eq_token: Punct,
+    pub(crate) expr: Vec<TokenTree>,
     pub(crate) semi_token: Punct,
 }
 
 pub(crate) struct ImplItemMethod {
     pub(crate) attrs: Vec<Attribute>,
     pub(crate) vis: Visibility,
-    defaultness: Option<Ident>,
+    pub(crate) defaultness: Option<Ident>,
     pub(crate) sig: Signature,
     pub(crate) body: Group,
 }
@@ -266,19 +239,19 @@ pub(crate) struct ImplItemMethod {
 pub(crate) struct ImplItemType {
     pub(crate) attrs: Vec<Attribute>,
     pub(crate) vis: Visibility,
-    defaultness: Option<Ident>,
+    pub(crate) defaultness: Option<Ident>,
     pub(crate) type_token: Ident,
     pub(crate) ident: Ident,
     pub(crate) generics: Generics,
-    eq_token: Punct,
-    ty: Vec<TokenTree>,
+    pub(crate) eq_token: Punct,
+    pub(crate) ty: Vec<TokenTree>,
     pub(crate) semi_token: Punct,
 }
 
 #[derive(Clone)]
 pub(crate) struct Signature {
     // [const] [async] [unsafe] [extern [<abi>]] fn
-    before_ident: Vec<TokenTree>,
+    pub(crate) before_ident: Vec<TokenTree>,
     pub(crate) ident: Ident,
     pub(crate) generics: Generics,
     pub(crate) inputs: TokenStream,
@@ -292,7 +265,7 @@ pub(crate) struct ItemTrait {
     pub(crate) trait_token: Ident,
     pub(crate) ident: Ident,
     pub(crate) generics: Generics,
-    pub(crate) brace_token: token::Brace,
+    pub(crate) brace_token: Span,
     pub(crate) items: Vec<TraitItem>,
 }
 
@@ -329,17 +302,17 @@ mod parsing {
     use proc_macro2::{Delimiter, Group, Literal, Punct, Spacing, TokenStream, TokenTree};
     use syn::{
         braced,
-        ext::IdentExt,
-        parse::{discouraged::Speculative, Parse, ParseStream},
+        parse::{Parse, ParseStream},
         token, Ident, Lifetime, Result, Token,
     };
 
     use super::{
-        Attribute, BoundLifetimes, ConstParam, GenericParam, Generics, ImplItem, ImplItemConst,
-        ImplItemMethod, ImplItemType, ItemImpl, LifetimeDef, PredicateLifetime, PredicateType,
-        Signature, TypeParam, TypeParamBound, Visibility, WhereClause, WherePredicate,
+        Attribute, AttributeKind, BoundLifetimes, ConstParam, GenericParam, Generics, ImplItem,
+        ImplItemConst, ImplItemMethod, ImplItemType, ItemImpl, LifetimeDef, PredicateLifetime,
+        PredicateType, Signature, TypeParam, TypeParamBound, Visibility, WhereClause,
+        WherePredicate,
     };
-    use crate::to_tokens::ToTokens;
+    use crate::{iter::TokenIter, to_tokens::ToTokens};
 
     pub(crate) fn parse_group(input: ParseStream<'_>, delimiter: Delimiter) -> Result<Group> {
         let (ok, ch) = match delimiter {
@@ -406,6 +379,14 @@ mod parsing {
         }
     }
 
+    fn parse_ident(input: ParseStream<'_>) -> Result<Ident> {
+        match input.parse()? {
+            Some(TokenTree::Ident(i)) => Ok(i),
+            Some(tt) => Err(error!(tt, "expected identifier")),
+            None => Err(input.error("expected identifier")),
+        }
+    }
+
     fn parse_until_punct(input: ParseStream<'_>, ch: char) -> Result<(Vec<TokenTree>, Punct)> {
         let mut buf = vec![];
         loop {
@@ -441,19 +422,18 @@ mod parsing {
                 Some(TokenTree::Punct(p)) if p.as_char() == '<' => {
                     angle_bracket += 1;
                 }
-                Some(TokenTree::Punct(p))
-                    if p.as_char() == '>' && {
-                        buf.last().map_or(true, |l| match l {
-                            TokenTree::Punct(p)
-                                if p.as_char() == '-' && p.spacing() == Spacing::Joint =>
-                            {
-                                // `->`
-                                false
-                            }
-                            _ => true,
-                        })
-                    } =>
-                {
+                Some(TokenTree::Punct(p)) if p.as_char() == '>' => {
+                    match buf.last() {
+                        Some(TokenTree::Punct(p))
+                            if p.as_char() == '-' && p.spacing() == Spacing::Joint =>
+                        {
+                            // `->`
+                            // It's so confusing with `>`, so do not visit it.
+                            buf.push(input.parse::<TokenTree>()?);
+                            continue;
+                        }
+                        _ => {}
+                    }
                     angle_bracket -= 1;
                     if angle_bracket >= 0 {
                         buf.push(input.parse::<TokenTree>()?);
@@ -467,6 +447,33 @@ mod parsing {
             }
             buf.push(input.parse::<TokenTree>()?);
         }
+    }
+
+    fn parse_attrs(input: ParseStream<'_>) -> Result<Vec<Attribute>> {
+        let mut attrs = Vec::new();
+        while input.peek(Token![#]) {
+            attrs.push(input.call(|input| {
+                let pound_token = input.parse()?;
+                let tokens: Group = parse_group(input, Delimiter::Bracket)?;
+                let mut kind = AttributeKind::Other;
+                let mut iter = TokenIter::new(tokens.stream());
+                if let Some(TokenTree::Ident(i)) = iter.next() {
+                    match iter.next() {
+                        // ignore #[path ...]
+                        Some(TokenTree::Punct(ref p))
+                            if p.as_char() == ':' && p.spacing() == Spacing::Joint => {}
+                        _ => match &*i.to_string() {
+                            "doc" => kind = AttributeKind::Doc,
+                            "inline" => kind = AttributeKind::Inline,
+                            _ => {}
+                        },
+                    }
+                }
+
+                Ok(Attribute { pound_token, tokens, kind })
+            })?);
+        }
+        Ok(attrs)
     }
 
     impl Parse for Generics {
@@ -483,7 +490,7 @@ mod parsing {
                     break;
                 }
 
-                let attrs = input.call(Attribute::parse_outer)?;
+                let attrs = input.call(parse_attrs)?;
                 let lookahead = input.lookahead1();
                 let value = if lookahead.peek(Lifetime) {
                     GenericParam::Lifetime(LifetimeDef { attrs, ..input.parse()? })
@@ -494,7 +501,7 @@ mod parsing {
                 } else if input.peek(Token![_]) {
                     GenericParam::Type(TypeParam {
                         attrs,
-                        ident: input.call(Ident::parse_any)?,
+                        ident: parse_ident(input)?,
                         colon_token: None,
                         bounds: Vec::new(),
                         eq_token: None,
@@ -525,7 +532,7 @@ mod parsing {
 
     impl Parse for LifetimeDef {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
-            let attrs = input.call(Attribute::parse_outer)?;
+            let attrs = input.call(parse_attrs)?;
             let lifetime = input.parse()?;
             let colon_token = parse_punct_opt(input, ':')?;
 
@@ -557,12 +564,13 @@ mod parsing {
                 lifetimes: {
                     let mut lifetimes = Vec::new();
                     while !input.peek(Token![>]) {
-                        let lt = input.parse()?;
+                        let lifetime = input.parse()?;
                         if input.peek(Token![>]) {
-                            lifetimes.push((lt, None));
+                            lifetimes.push((lifetime, None));
                             break;
                         }
-                        lifetimes.push((lt, Some(parse_punct(input, ',')?)));
+                        let punct = parse_punct(input, ',')?;
+                        lifetimes.push((lifetime, Some(punct)));
                     }
                     lifetimes
                 },
@@ -573,7 +581,7 @@ mod parsing {
 
     impl Parse for TypeParam {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
-            let attrs = input.call(Attribute::parse_outer)?;
+            let attrs = input.call(parse_attrs)?;
             let ident: Ident = input.parse()?;
             let colon_token = parse_punct_opt(input, ':')?;
 
@@ -599,17 +607,11 @@ mod parsing {
                         _ => false,
                     })?;
                     if !input.peek(Token![+]) {
-                        bounds.push((
-                            TypeParamBound { tokens: value.into_iter().collect(), is_maybe },
-                            None,
-                        ));
+                        bounds.push((TypeParamBound::new(value, is_maybe), None));
                         break;
                     }
                     let punct = parse_punct(input, '+')?;
-                    bounds.push((
-                        TypeParamBound { tokens: value.into_iter().collect(), is_maybe },
-                        Some(punct),
-                    ));
+                    bounds.push((TypeParamBound::new(value, is_maybe), Some(punct)));
                 }
             }
 
@@ -647,9 +649,9 @@ mod parsing {
 
     impl Parse for ConstParam {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
-            let attrs = input.call(Attribute::parse_outer)?;
+            let attrs = input.call(parse_attrs)?;
             let const_token = parse_kw(input, "const")?;
-            let ident = input.parse()?;
+            let ident = parse_ident(input)?;
             let colon_token = parse_punct(input, ':')?;
 
             let mut ty = vec![];
@@ -789,20 +791,11 @@ mod parsing {
                                 _ => false,
                             })?;
                             if !input.peek(Token![+]) {
-                                bounds.push((
-                                    TypeParamBound {
-                                        tokens: value.into_iter().collect(),
-                                        is_maybe,
-                                    },
-                                    None,
-                                ));
+                                bounds.push((TypeParamBound::new(value, is_maybe), None));
                                 break;
                             }
                             let punct = parse_punct(input, '+')?;
-                            bounds.push((
-                                TypeParamBound { tokens: value.into_iter().collect(), is_maybe },
-                                Some(punct),
-                            ));
+                            bounds.push((TypeParamBound::new(value, is_maybe), Some(punct)));
                         }
                         bounds
                     },
@@ -835,7 +828,7 @@ mod parsing {
 
     impl Parse for ItemImpl {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
-            let attrs = input.call(Attribute::parse_outer)?;
+            let attrs = input.call(parse_attrs)?;
             let vis: Visibility = input.parse()?;
             let defaultness = parse_kw_opt(input, "default")?;
             let unsafety = parse_kw_opt(input, "unsafe")?;
@@ -880,7 +873,7 @@ mod parsing {
                 generics,
                 trait_: None,
                 self_ty,
-                brace_token,
+                brace_token: brace_token.span,
                 items,
             })
         }
@@ -888,24 +881,24 @@ mod parsing {
 
     impl Parse for ImplItem {
         fn parse(input: ParseStream<'_>) -> Result<Self> {
-            let mut attrs = input.call(Attribute::parse_outer)?;
-            let ahead = input.fork();
-            let vis: Visibility = ahead.parse()?;
+            let attrs = input.call(parse_attrs)?;
+            let vis: Visibility = input.parse()?;
 
-            let mut lookahead = ahead.lookahead1();
-            let defaultness = if lookahead.peek(Token![default]) && !ahead.peek2(Token![!]) {
-                let defaultness = parse_kw(&ahead, "default")?;
-                lookahead = ahead.lookahead1();
+            let mut lookahead = input.lookahead1();
+            let defaultness = if lookahead.peek(Token![default]) && !input.peek2(Token![!]) {
+                let defaultness = parse_kw(&input, "default")?;
+                lookahead = input.lookahead1();
                 Some(defaultness)
             } else {
                 None
             };
 
-            let mut item = if lookahead.peek(Token![fn]) || peek_signature(&ahead) {
-                input.parse().map(ImplItem::Method)
+            if lookahead.peek(Token![fn]) || peek_signature(&input) {
+                let sig: Signature = input.parse()?;
+                let body = parse_group(input, Delimiter::Brace)?;
+                Ok(ImplItem::Method(ImplItemMethod { attrs, vis, defaultness, sig, body }))
             } else if lookahead.peek(Token![const]) {
-                let const_token = parse_kw(&ahead, "const")?;
-                input.advance_to(&ahead);
+                let const_token = parse_kw(input, "const")?;
                 let ident: Ident = input.parse()?;
                 let colon_token = parse_punct(input, ':')?;
 
@@ -923,7 +916,7 @@ mod parsing {
 
                 let (expr, semi_token) = parse_until_punct(input, ';')?;
 
-                return Ok(ImplItem::Const(ImplItemConst {
+                Ok(ImplItem::Const(ImplItemConst {
                     attrs,
                     vis,
                     defaultness,
@@ -934,67 +927,34 @@ mod parsing {
                     eq_token,
                     expr,
                     semi_token,
-                }));
+                }))
             } else if lookahead.peek(Token![type]) {
-                input.parse().map(ImplItem::Type)
+                let type_token = parse_kw(input, "type")?;
+                let ident = input.parse()?;
+                let mut generics: Generics = input.parse()?;
+
+                if input.peek(Token![where]) {
+                    generics.where_clause = Some(input.parse()?);
+                }
+
+                let eq_token = parse_punct(input, '=')?;
+
+                let (ty, semi_token) = parse_until_punct(input, ';')?;
+
+                Ok(ImplItem::Type(ImplItemType {
+                    attrs,
+                    vis,
+                    defaultness,
+                    type_token,
+                    ident,
+                    generics,
+                    eq_token,
+                    ty,
+                    semi_token,
+                }))
             } else {
                 Err(lookahead.error())
-            }?;
-
-            {
-                let item_attrs = match &mut item {
-                    ImplItem::Const(item) => &mut item.attrs,
-                    ImplItem::Method(item) => &mut item.attrs,
-                    ImplItem::Type(item) => &mut item.attrs,
-                };
-                attrs.extend(item_attrs.drain(..));
-                *item_attrs = attrs;
             }
-
-            Ok(item)
-        }
-    }
-
-    impl Parse for ImplItemMethod {
-        fn parse(input: ParseStream<'_>) -> Result<Self> {
-            let attrs = input.call(Attribute::parse_outer)?;
-            let vis: Visibility = input.parse()?;
-            let defaultness = parse_kw_opt(input, "default")?;
-            let sig: Signature = input.parse()?;
-
-            let body = parse_group(input, Delimiter::Brace)?;
-            Ok(ImplItemMethod { attrs, vis, defaultness, sig, body })
-        }
-    }
-
-    impl Parse for ImplItemType {
-        fn parse(input: ParseStream<'_>) -> Result<Self> {
-            let attrs = input.call(Attribute::parse_outer)?;
-            let vis = input.parse()?;
-            let defaultness = parse_kw_opt(input, "default")?;
-            let type_token = parse_kw(input, "type")?;
-            let ident = input.parse()?;
-            let mut generics: Generics = input.parse()?;
-
-            if input.peek(Token![where]) {
-                generics.where_clause = Some(input.parse()?);
-            }
-
-            let eq_token = parse_punct(input, '=')?;
-
-            let (ty, semi_token) = parse_until_punct(input, ';')?;
-
-            Ok(ImplItemType {
-                attrs,
-                vis,
-                defaultness,
-                type_token,
-                ident,
-                generics,
-                eq_token,
-                ty,
-                semi_token,
-            })
         }
     }
 
@@ -1003,44 +963,12 @@ mod parsing {
         fork.parse::<Option<Token![const]>>().is_ok()
             && fork.parse::<Option<Token![async]>>().is_ok()
             && fork.parse::<Option<Token![unsafe]>>().is_ok()
-            && (if fork.peek(Token![extern]) { fork.parse::<Abi>().is_ok() } else { true })
-            && fork.peek(Token![fn])
-    }
-
-    #[allow(dead_code)]
-    struct Abi {
-        extern_token: Token![extern],
-        name: Option<Literal>,
-    }
-
-    impl Parse for Abi {
-        fn parse(input: ParseStream<'_>) -> Result<Self> {
-            Ok(Abi { extern_token: input.parse()?, name: input.parse()? })
-        }
-    }
-
-    struct ReturnType {
-        // [-> <ty>]
-        ty: Option<TokenStream>,
-    }
-
-    impl Parse for ReturnType {
-        fn parse(input: ParseStream<'_>) -> Result<Self> {
-            if input.peek(Token![->]) {
-                let arrow1 = input.parse()?;
-                let arrow2 = input.parse()?;
-                let mut tokens = vec![arrow1, arrow2];
-                append_tokens_until(input, &mut tokens, false, |next| match next {
-                    Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => true,
-                    Some(TokenTree::Ident(i)) if i == "where" => true,
-                    None => true,
-                    _ => false,
-                })?;
-                Ok(Self { ty: Some(tokens.into_iter().collect()) })
+            && (if fork.peek(Token![extern]) {
+                fork.parse::<Token![extern]>().is_ok() && fork.parse::<Option<Literal>>().is_ok()
             } else {
-                Ok(Self { ty: None })
-            }
-        }
+                true
+            })
+            && fork.peek(Token![fn])
     }
 
     impl Parse for Signature {
@@ -1063,20 +991,32 @@ mod parsing {
             let inputs = parse_group(input, Delimiter::Parenthesis)?;
             let inputs = Some(TokenTree::Group(inputs)).into_iter().collect();
 
-            let output: ReturnType = input.parse()?;
+            let output = if input.peek(Token![->]) {
+                let arrow1 = input.parse()?;
+                let arrow2 = input.parse()?;
+                let mut tokens = vec![arrow1, arrow2];
+                append_tokens_until(input, &mut tokens, false, |next| match next {
+                    Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => true,
+                    Some(TokenTree::Ident(i)) if i == "where" => true,
+                    None => true,
+                    _ => false,
+                })?;
+                Some(tokens.into_iter().collect())
+            } else {
+                None
+            };
 
             if input.peek(Token![where]) {
                 generics.where_clause = Some(input.parse()?);
             }
 
-            Ok(Signature { before_ident, ident, generics, inputs, output: output.ty })
+            Ok(Signature { before_ident, ident, generics, inputs, output })
         }
     }
 }
 
 pub(crate) mod printing {
     use proc_macro2::{Delimiter, Group, Punct, Spacing, Span, TokenStream};
-    use syn::token;
 
     use super::{
         Attribute, BoundLifetimes, ConstParam, GenericParam, Generics, ImplItem, ImplItemConst,
@@ -1329,10 +1269,7 @@ pub(crate) mod printing {
         }
     }
 
-    fn delim<F>(s: &str, span: Span, tokens: &mut TokenStream, f: F)
-    where
-        F: FnOnce(&mut TokenStream),
-    {
+    fn delim(s: &str, span: Span, tokens: &mut TokenStream, f: impl FnOnce(&mut TokenStream)) {
         let delim = match s {
             "(" => Delimiter::Parenthesis,
             "[" => Delimiter::Bracket,
@@ -1347,11 +1284,8 @@ pub(crate) mod printing {
         g.to_tokens(tokens);
     }
 
-    fn surround<F>(brace: &token::Brace, tokens: &mut TokenStream, f: F)
-    where
-        F: FnOnce(&mut TokenStream),
-    {
-        delim("{", brace.span, tokens, f);
+    fn brace(span: Span, tokens: &mut TokenStream, f: impl FnOnce(&mut TokenStream)) {
+        delim("{", span, tokens, f);
     }
 
     impl ToTokens for ItemTrait {
@@ -1363,7 +1297,7 @@ pub(crate) mod printing {
             self.ident.to_tokens(tokens);
             self.generics.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
-            surround(&self.brace_token, tokens, |tokens| {
+            brace(self.brace_token, tokens, |tokens| {
                 self.items.to_tokens(tokens);
             });
         }
@@ -1383,7 +1317,7 @@ pub(crate) mod printing {
             }
             self.self_ty.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
-            surround(&self.brace_token, tokens, |tokens| {
+            brace(self.brace_token, tokens, |tokens| {
                 self.items.to_tokens(tokens);
             });
         }

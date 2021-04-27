@@ -11,7 +11,7 @@ mod basic {
     }
     #[ext(NoValueFn)]
     impl str {
-        fn assoc(); //~ ERROR expected curly braces
+        fn assoc(); //~ ERROR expected `{`
     }
 
     #[ext(Macro)]

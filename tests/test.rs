@@ -387,13 +387,71 @@ fn syntax() {
         async fn asyncness(&self) {}
         async unsafe fn unsafe_asyncness(&self) {}
     }
+}
 
-    #[ext(E3)]
+// test for angle bracket
+#[test]
+fn angle_bracket() {
+    #[ext]
     impl fn() -> () {
-        const FUNC: fn(&str) -> () = str::normal as fn(&str) -> ();
+        const FUNC: fn(&u8) -> bool = u8::is_ascii as fn(&u8) -> bool;
         type Func = fn() -> fn() -> ();
         fn func() -> fn() -> fn() -> () {
             || || {}
+        }
+    }
+
+    #[ext(E1)]
+    impl<T> T
+    where
+        Self::Assoc3: Sized,
+        T::Assoc3: Sized,
+        Self: E2,
+        T: E2,
+    {
+        const ASSOC1: <Self>::Assoc1 = <Self>::assoc1;
+        type Assoc1 = fn() -> <Self>::Assoc2;
+        type Assoc2 = ();
+        fn assoc1() -> <Self>::Assoc2
+        where
+            <Self as E1>::Assoc1: Sized,
+            <T as E1>::Assoc1: Sized,
+            Self::Assoc1: Sized,
+            T::Assoc3: Sized,
+            Self: E2,
+            T: E2,
+        {
+        }
+    }
+
+    struct A {}
+    #[ext(E2)]
+    impl A {
+        const ASSOC1: <Self>::Assoc3 = <Self>::assoc2;
+        type Assoc3 = fn() -> <Self>::Assoc4;
+        type Assoc4 = ();
+        fn assoc2() -> <Self>::Assoc4
+        where
+            <Self as E2>::Assoc3: Sized,
+            Self::Assoc3: Sized,
+        {
+        }
+    }
+
+    #[ext]
+    impl<T: Fn() -> fn() -> T, E> Result<T, E>
+    where
+        E: FnOnce() -> Result<T, E>,
+        &'static dyn Fn() -> T: Fn() -> T + 'static,
+        fn() -> fn() -> T: Fn() -> fn() -> T,
+    {
+        fn where_clause<U: Fn() -> fn() -> T, F>(self, _f: F) -> Self
+        where
+            F: FnOnce() -> Result<U, E>,
+            &'static dyn Fn() -> T: Fn() -> T + 'static,
+            fn() -> fn() -> T: Fn() -> fn() -> T,
+        {
+            unimplemented!()
         }
     }
 }
@@ -405,7 +463,7 @@ fn min_const_generics() {
     impl<T, const CAP: usize> S1<T, CAP> {
         const CAPACITY: usize = CAP;
         fn f<const C: usize>() -> S1<T, C> {
-            todo!()
+            unimplemented!()
         }
     }
 

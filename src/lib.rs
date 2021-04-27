@@ -202,10 +202,10 @@ mod to_tokens;
 use std::{collections::hash_map::DefaultHasher, hash::Hasher, iter::FromIterator, mem};
 
 use proc_macro::TokenStream;
-use proc_macro2::{Delimiter, Group, Spacing, Span, TokenStream as TokenStream2, TokenTree};
+use proc_macro2::{Delimiter, Group, Span, TokenStream as TokenStream2, TokenTree};
 use syn::{
     parse::{Parse, ParseStream},
-    token, Error, Ident, Result,
+    Error, Ident, Result,
 };
 
 use crate::{
@@ -307,6 +307,9 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     /// Replace `self_ty` with `Self`.
     struct ReplaceParam<'a> {
         self_ty: &'a Ident,
+        // Restrict the scope for removing `?Trait` bounds, because `?Trait`
+        // bounds are only permitted at the point where a type parameter is
+        // declared.
         remove_maybe: bool,
     }
 
@@ -314,33 +317,14 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         fn visit_token_stream(&self, tokens: &mut TokenStream2) -> bool {
             let mut out: Vec<TokenTree> = Vec::new();
             let mut modified = false;
-            let mut iter = tokens.clone().into_iter().peekable();
-            while let Some(tt) = iter.next() {
+            let iter = tokens.clone().into_iter();
+            for tt in iter {
                 match tt {
                     TokenTree::Ident(ident) => {
                         if ident == *self.self_ty {
                             modified = true;
                             let self_ = Ident::new("Self", ident.span());
-                            match iter.peek() {
-                                Some(TokenTree::Punct(p))
-                                    if p.as_char() == ':' && p.spacing() == Spacing::Joint =>
-                                {
-                                    let next = iter.next().unwrap();
-                                    match iter.peek() {
-                                        Some(TokenTree::Punct(p)) if p.as_char() == ':' => {
-                                            let span = ident.span();
-                                            out.extend(vec![
-                                                TokenTree::Punct(punct('<', span)),
-                                                self_.into(),
-                                                punct('>', span).into(),
-                                            ])
-                                        }
-                                        _ => out.push(self_.into()),
-                                    }
-                                    out.push(next);
-                                }
-                                _ => out.push(self_.into()),
-                            }
+                            out.push(self_.into());
                         } else {
                             out.push(TokenTree::Ident(ident));
                         }
@@ -404,23 +388,20 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
                             if self.remove_maybe {
                                 let mut iter = pred.bounded_ty.clone().into_iter();
                                 if let Some(TokenTree::Ident(i)) = iter.next() {
-                                    if iter.next().is_none() {
-                                        let s = i.to_string();
-                                        if *self.self_ty == s {
+                                    if iter.next().is_none() && *self.self_ty == i {
+                                        let bounds = mem::replace(&mut pred.bounds, Vec::new())
+                                            .into_iter()
+                                            .filter(|(b, _)| !b.is_maybe)
+                                            .collect::<Vec<_>>();
+                                        if !bounds.is_empty() {
                                             self.visit_token_stream(&mut pred.bounded_ty);
-                                            let bounds = mem::replace(&mut pred.bounds, Vec::new())
-                                                .into_iter()
-                                                .filter(|(b, _)| !b.is_maybe)
-                                                .collect::<Vec<_>>();
-                                            if !bounds.is_empty() {
-                                                pred.bounds = bounds;
-                                                for (bound, _) in &mut pred.bounds {
-                                                    self.visit_token_stream(&mut bound.tokens);
-                                                }
-                                                where_clause.predicates.push((predicate, p));
+                                            pred.bounds = bounds;
+                                            for (bound, _) in &mut pred.bounds {
+                                                self.visit_token_stream(&mut bound.tokens);
                                             }
-                                            continue;
+                                            where_clause.predicates.push((predicate, p));
                                         }
+                                        continue;
                                     }
                                 }
                             }
@@ -493,7 +474,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         trait_token: Ident::new("trait", item.impl_token.span()),
         ident: name,
         generics,
-        brace_token: token::Brace(item.brace_token.span),
+        brace_token: item.brace_token,
         items,
     })
 }
