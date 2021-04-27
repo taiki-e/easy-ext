@@ -255,6 +255,19 @@ fn trait_generics() {
     a(A::INIT2);
 }
 
+#[test]
+fn type_parameter_defaults() {
+    #[ext(Ext)]
+    impl<T = ()> () {}
+    impl Ext for u8 {}
+
+    // The code above is equivalent to the code below.
+
+    trait Trait<T = ()> {}
+    impl<T> Trait<T> for () {}
+    impl Trait for u8 {}
+}
+
 // See also ui/maybe.rs
 #[test]
 fn maybe() {

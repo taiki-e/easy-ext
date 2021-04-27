@@ -23,6 +23,10 @@ impl Generics {
         })
     }
 
+    pub(crate) fn impl_generics(&self) -> ImplGenerics<'_> {
+        ImplGenerics(self)
+    }
+
     pub(crate) fn ty_generics(&self) -> TypeGenerics<'_> {
         TypeGenerics(self)
     }
@@ -93,6 +97,7 @@ pub(crate) struct ConstParam {
     pub(crate) default: Option<TokenStream>,
 }
 
+pub(crate) struct ImplGenerics<'a>(&'a Generics);
 pub(crate) struct TypeGenerics<'a>(&'a Generics);
 
 #[derive(Clone)]
@@ -588,6 +593,7 @@ mod parsing {
             let mut bounds = Vec::new();
             if colon_token.is_some() {
                 loop {
+                    input.fork().parse::<TokenStream>().unwrap();
                     if input.peek(Token![,]) || input.peek(Token![>]) || input.peek(Token![=]) {
                         break;
                     }
@@ -615,9 +621,11 @@ mod parsing {
                 }
             }
 
+            input.fork().parse::<TokenStream>().unwrap();
             let mut default = None;
-            let eq_token = if input.peek(Token![=]) {
-                let eq_token = parse_punct(input, '=')?;
+            let eq_token = parse_punct_opt(input, '=')?;
+            if eq_token.is_some() {
+                input.fork().parse::<TokenStream>().unwrap();
                 default = Some({
                     let mut ty = vec![];
                     append_tokens_until(input, &mut ty, false, |next| match next {
@@ -629,10 +637,7 @@ mod parsing {
                     })?;
                     ty.into_iter().collect()
                 });
-                Some(eq_token)
-            } else {
-                None
-            };
+            }
 
             Ok(TypeParam { attrs, ident, colon_token, bounds, eq_token, default })
         }
@@ -840,7 +845,8 @@ mod parsing {
                     || (input.peek2(Ident) || input.peek2(Lifetime))
                         && (input.peek3(Token![:])
                             || input.peek3(Token![,])
-                            || input.peek3(Token![>]))
+                            || input.peek3(Token![>])
+                            || input.peek3(Token![=]))
                     || input.peek2(Token![const]));
             let mut generics: Generics =
                 if has_generics { input.parse()? } else { Generics::default() };
@@ -1019,10 +1025,11 @@ pub(crate) mod printing {
     use proc_macro2::{Delimiter, Group, Punct, Spacing, Span, TokenStream};
 
     use super::{
-        Attribute, BoundLifetimes, ConstParam, GenericParam, Generics, ImplItem, ImplItemConst,
-        ImplItemMethod, ImplItemType, ItemImpl, ItemTrait, LifetimeDef, PredicateLifetime,
-        PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType,
-        TypeGenerics, TypeParam, TypeParamBound, Visibility, WhereClause, WherePredicate,
+        Attribute, BoundLifetimes, ConstParam, GenericParam, Generics, ImplGenerics, ImplItem,
+        ImplItemConst, ImplItemMethod, ImplItemType, ItemImpl, ItemTrait, LifetimeDef,
+        PredicateLifetime, PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod,
+        TraitItemType, TypeGenerics, TypeParam, TypeParamBound, Visibility, WhereClause,
+        WherePredicate,
     };
     use crate::to_tokens::ToTokens;
 
@@ -1032,16 +1039,20 @@ pub(crate) mod printing {
         p
     }
 
+    fn tokens_or_default(p: &Option<Punct>, ch: char, tokens: &mut TokenStream) {
+        match p {
+            Some(p) => p.to_tokens(tokens),
+            None => punct(ch, Span::call_site()).to_tokens(tokens),
+        }
+    }
+
     impl ToTokens for Generics {
         fn to_tokens(&self, tokens: &mut TokenStream) {
             if self.params.is_empty() {
                 return;
             }
 
-            self.lt_token
-                .clone()
-                .unwrap_or_else(|| punct('<', Span::call_site()))
-                .to_tokens(tokens);
+            tokens_or_default(&self.lt_token, '<', tokens);
 
             // Print lifetimes before types and consts, regardless of their
             // order in self.params.
@@ -1070,10 +1081,7 @@ pub(crate) mod printing {
                 }
             }
 
-            self.gt_token
-                .clone()
-                .unwrap_or_else(|| punct('>', Span::call_site()))
-                .to_tokens(tokens);
+            tokens_or_default(&self.gt_token, '>', tokens);
         }
     }
 
@@ -1101,10 +1109,7 @@ pub(crate) mod printing {
             self.attrs.to_tokens(tokens);
             self.lifetime.to_tokens(tokens);
             if !self.bounds.is_empty() {
-                self.colon_token
-                    .clone()
-                    .unwrap_or_else(|| punct(':', Span::call_site()))
-                    .to_tokens(tokens);
+                tokens_or_default(&self.colon_token, ':', tokens);
                 self.bounds.to_tokens(tokens);
             }
         }
@@ -1115,20 +1120,14 @@ pub(crate) mod printing {
             self.attrs.to_tokens(tokens);
             self.ident.to_tokens(tokens);
             if !self.bounds.is_empty() {
-                self.colon_token
-                    .clone()
-                    .unwrap_or_else(|| punct(':', Span::call_site()))
-                    .to_tokens(tokens);
+                tokens_or_default(&self.colon_token, ':', tokens);
                 for (bound, punct) in &self.bounds {
                     bound.to_tokens(tokens);
                     punct.to_tokens(tokens);
                 }
             }
             if let Some(default) = &self.default {
-                self.eq_token
-                    .clone()
-                    .unwrap_or_else(|| punct('=', Span::call_site()))
-                    .to_tokens(tokens);
+                tokens_or_default(&self.eq_token, '=', tokens);
                 default.to_tokens(tokens);
             }
         }
@@ -1148,12 +1147,65 @@ pub(crate) mod printing {
             self.colon_token.to_tokens(tokens);
             self.ty.to_tokens(tokens);
             if let Some(default) = &self.default {
-                self.eq_token
-                    .clone()
-                    .unwrap_or_else(|| punct('=', Span::call_site()))
-                    .to_tokens(tokens);
+                tokens_or_default(&self.eq_token, '=', tokens);
                 default.to_tokens(tokens);
             }
+        }
+    }
+
+    impl ToTokens for ImplGenerics<'_> {
+        fn to_tokens(&self, tokens: &mut TokenStream) {
+            if self.0.params.is_empty() {
+                return;
+            }
+
+            tokens_or_default(&self.0.lt_token, '<', tokens);
+
+            // Print lifetimes before types and consts, regardless of their
+            // order in self.params.
+            //
+            // TODO: ordering rules for const parameters vs type parameters have
+            // not been settled yet. https://github.com/rust-lang/rust/issues/44580
+            let mut trailing_or_empty = true;
+            for (param, p) in &self.0.params {
+                if let GenericParam::Lifetime(_) = param {
+                    param.to_tokens(tokens);
+                    p.to_tokens(tokens);
+                    trailing_or_empty = p.is_some();
+                }
+            }
+            for (param, p) in &self.0.params {
+                if let GenericParam::Lifetime(_) = param {
+                    continue;
+                }
+                if !trailing_or_empty {
+                    punct(',', Span::call_site()).to_tokens(tokens);
+                    trailing_or_empty = true;
+                }
+                match param {
+                    GenericParam::Lifetime(_) => unreachable!(),
+                    GenericParam::Type(param) => {
+                        // Leave off the type parameter defaults
+                        param.attrs.to_tokens(tokens);
+                        param.ident.to_tokens(tokens);
+                        if !param.bounds.is_empty() {
+                            tokens_or_default(&param.colon_token, ':', tokens);
+                            param.bounds.to_tokens(tokens);
+                        }
+                    }
+                    GenericParam::Const(param) => {
+                        // Leave off the const parameter defaults
+                        param.attrs.to_tokens(tokens);
+                        param.const_token.to_tokens(tokens);
+                        param.ident.to_tokens(tokens);
+                        param.colon_token.to_tokens(tokens);
+                        param.ty.to_tokens(tokens);
+                    }
+                }
+                p.to_tokens(tokens);
+            }
+
+            tokens_or_default(&self.0.gt_token, '>', tokens);
         }
     }
 
@@ -1163,11 +1215,7 @@ pub(crate) mod printing {
                 return;
             }
 
-            self.0
-                .lt_token
-                .clone()
-                .unwrap_or_else(|| punct('<', Span::call_site()))
-                .to_tokens(tokens);
+            tokens_or_default(&self.0.lt_token, '<', tokens);
 
             // Print lifetimes before types and consts, regardless of their
             // order in self.params.
@@ -1205,11 +1253,7 @@ pub(crate) mod printing {
                 p.to_tokens(tokens);
             }
 
-            self.0
-                .gt_token
-                .clone()
-                .unwrap_or_else(|| punct('>', Span::call_site()))
-                .to_tokens(tokens);
+            tokens_or_default(&self.0.gt_token, '>', tokens);
         }
     }
 
@@ -1309,7 +1353,7 @@ pub(crate) mod printing {
             self.defaultness.to_tokens(tokens);
             self.unsafety.to_tokens(tokens);
             self.impl_token.to_tokens(tokens);
-            self.generics.to_tokens(tokens);
+            self.generics.impl_generics().to_tokens(tokens);
             if let Some((i, g, f)) = &self.trait_ {
                 i.to_tokens(tokens);
                 g.to_tokens(tokens);
