@@ -268,10 +268,9 @@ fn determine_trait_generics<'a>(
             if let GenericParam::Type(param) = param { param.ident == *ident } else { false }
         });
         if let Some(i) = i {
-            let mut params =
-                mem::replace(&mut generics.params, Vec::new()).into_iter().collect::<Vec<_>>();
+            let mut params = mem::replace(&mut generics.params, Vec::new());
             let (param, _) = params.remove(i);
-            generics.params = params.into_iter().collect();
+            generics.params = params;
 
             if let GenericParam::Type(TypeParam {
                 colon_token: Some(colon_token), bounds, ..
