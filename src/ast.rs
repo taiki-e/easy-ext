@@ -208,6 +208,7 @@ pub(crate) struct ItemImpl {
     pub(crate) unsafety: Option<Ident>,
     pub(crate) impl_token: Ident,
     pub(crate) generics: Generics,
+    pub(crate) const_token: Option<Ident>,
     pub(crate) trait_: Option<(Ident, TokenStream, Ident)>,
     pub(crate) self_ty: Vec<TokenTree>,
     pub(crate) brace_token: Span,
@@ -851,6 +852,8 @@ mod parsing {
             let mut generics: Generics =
                 if has_generics { input.parse()? } else { Generics::default() };
 
+            let const_token = parse_kw_opt(input, "const")?;
+
             let mut self_ty = vec![];
             append_tokens_until(input, &mut self_ty, false, |next| match next {
                 Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => true,
@@ -877,6 +880,7 @@ mod parsing {
                 unsafety,
                 impl_token,
                 generics,
+                const_token,
                 trait_: None,
                 self_ty,
                 brace_token: brace_token.span,
@@ -1354,10 +1358,11 @@ pub(crate) mod printing {
             self.unsafety.to_tokens(tokens);
             self.impl_token.to_tokens(tokens);
             self.generics.impl_generics().to_tokens(tokens);
-            if let Some((i, g, f)) = &self.trait_ {
-                i.to_tokens(tokens);
-                g.to_tokens(tokens);
-                f.to_tokens(tokens);
+            self.const_token.to_tokens(tokens);
+            if let Some((path, generics, for_)) = &self.trait_ {
+                path.to_tokens(tokens);
+                generics.to_tokens(tokens);
+                for_.to_tokens(tokens);
             }
             self.self_ty.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
