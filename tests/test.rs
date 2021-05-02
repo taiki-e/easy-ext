@@ -221,7 +221,7 @@ fn trait_generics() {
         const INIT2: A = A {};
     }
 
-    #[ext(Ext)]
+    #[ext(Ext1)]
     impl<I: Iterator + ConstInit> I {
         const CONST1: Self = Self::INIT1;
         const CONST2: I = I::INIT1;
@@ -236,12 +236,12 @@ fn trait_generics() {
         fn method3(mut self) -> Option<Self::Item2> {
             self.next()
         }
-        fn method4(mut self) -> Option<<I as Ext>::Item3> {
+        fn method4(mut self) -> Option<<I as Ext1>::Item3> {
             self.next()
         }
     }
 
-    fn a<T: Ext + Eq + std::fmt::Debug>(mut x: T) {
+    fn a<T: Ext1 + Eq + std::fmt::Debug>(mut x: T) {
         let y = T::CONST1;
         let _ = T::CONST2;
         assert_eq!(x, y);
@@ -253,6 +253,21 @@ fn trait_generics() {
 
     a(A::INIT1);
     a(A::INIT2);
+
+    #[ext(Ext2)]
+    impl<I: Iterator + ConstInit> I {
+        const CONST3: I = {
+            #[allow(dead_code)]
+            fn a<I>() {}
+            I::INIT1
+        };
+        type Item4 = I::Item;
+        fn method5(self, _: I::Item) -> (Option<I::Item>, <I as Ext2>::Item4) {
+            #[allow(dead_code)]
+            fn a<I>() {}
+            unimplemented!()
+        }
+    }
 }
 
 #[test]
@@ -366,21 +381,25 @@ fn syntax() {
     unsafe impl str {
         fn normal(&self) {}
         unsafe fn unsafety(&self) {}
-        extern "C" fn abi() {}
-        unsafe extern "C" fn unsafe_abi() {}
+        extern "C" fn abi1() {}
+        extern "C" fn abi2() {}
+        unsafe extern "C" fn unsafe_abi1() {}
+        unsafe extern "C" fn unsafe_abi2() {}
     }
 
     "a".normal();
     unsafe { "?".unsafety() };
-    str::abi();
-    unsafe { str::unsafe_abi() };
+    str::abi1();
+    unsafe { str::unsafe_abi1() };
 
     struct S {}
     unsafe impl E1 for S {
         fn normal(&self) {}
         unsafe fn unsafety(&self) {}
-        extern "C" fn abi() {}
-        unsafe extern "C" fn unsafe_abi() {}
+        extern "C" fn abi1() {}
+        extern "C" fn abi2() {}
+        unsafe extern "C" fn unsafe_abi1() {}
+        unsafe extern "C" fn unsafe_abi2() {}
     }
 
     #[ext(E2)]
