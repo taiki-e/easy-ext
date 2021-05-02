@@ -594,7 +594,6 @@ mod parsing {
             let mut bounds = Vec::new();
             if colon_token.is_some() {
                 loop {
-                    input.fork().parse::<TokenStream>().unwrap();
                     if input.peek(Token![,]) || input.peek(Token![>]) || input.peek(Token![=]) {
                         break;
                     }
@@ -622,11 +621,9 @@ mod parsing {
                 }
             }
 
-            input.fork().parse::<TokenStream>().unwrap();
             let mut default = None;
             let eq_token = parse_punct_opt(input, '=')?;
             if eq_token.is_some() {
-                input.fork().parse::<TokenStream>().unwrap();
                 default = Some({
                     let mut ty = vec![];
                     append_tokens_until(input, &mut ty, false, |next| match next {
