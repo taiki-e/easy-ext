@@ -1,4 +1,3 @@
-#![allow(incomplete_features)]
 #![feature(const_generics_defaults)]
 #![feature(custom_inner_attributes)]
 #![rustfmt::skip]
