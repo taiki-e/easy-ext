@@ -835,7 +835,7 @@ mod parsing {
             let vis: Visibility = input.parse()?;
             let defaultness = parse_kw_opt(input, "default")?;
             let unsafety = parse_kw_opt(input, "unsafe")?;
-            let impl_token = parse_kw(&input, "impl")?;
+            let impl_token = parse_kw(input, "impl")?;
 
             let has_generics = input.peek(Token![<])
                 && (input.peek2(Token![>])
@@ -893,14 +893,14 @@ mod parsing {
 
             let mut lookahead = input.lookahead1();
             let defaultness = if lookahead.peek(Token![default]) && !input.peek2(Token![!]) {
-                let defaultness = parse_kw(&input, "default")?;
+                let defaultness = parse_kw(input, "default")?;
                 lookahead = input.lookahead1();
                 Some(defaultness)
             } else {
                 None
             };
 
-            if lookahead.peek(Token![fn]) || peek_signature(&input) {
+            if lookahead.peek(Token![fn]) || peek_signature(input) {
                 let sig: Signature = input.parse()?;
                 let body = parse_group(input, Delimiter::Brace)?;
                 Ok(ImplItem::Method(ImplItemMethod { attrs, vis, defaultness, sig, body }))
