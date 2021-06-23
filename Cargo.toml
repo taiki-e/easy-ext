@@ -23,8 +23,6 @@ members = ["tests/doc"]
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1"
-syn = { version = "1.0.56", default-features = false, features = ["parsing", "proc-macro"] }
 
 [dev-dependencies]
 async-trait = "0.1"
