@@ -10,6 +10,39 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+## [0.2.8] - 2021-06-23
+
+- [Support specifying visibility directly on `impl`.](https://github.com/taiki-e/easy-ext/pull/31)
+
+  ```rust
+  #[ext(Ext)]
+  pub impl Type {
+      fn method(&self) {}
+  }
+  ```
+
+  ```text
+  pub impl Type {
+  ^^^
+  ```
+
+  The old impl-level visibility syntax (`#[ext(pub)]`) will still be supported, but it is deprecated and will be removed in the next major version.
+
+  Migration:
+
+  ```diff
+  - #[ext(pub)]
+  - impl Type {
+  + #[ext]
+  + pub impl Type {
+      fn method(&self) {}
+  }
+  ```
+
+- [Improve compile time by removing all dependencies.](https://github.com/taiki-e/easy-ext/pull/35)
+
+- [Support type parameter defaults.](https://github.com/taiki-e/easy-ext/pull/32)
+
 ## [0.2.7] - 2021-03-25
 
 - [Support associated types.](https://github.com/taiki-e/easy-ext/pull/26)
@@ -86,7 +119,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.2.7...HEAD
+[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.2.8...HEAD
+[0.2.8]: https://github.com/taiki-e/easy-ext/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/taiki-e/easy-ext/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/taiki-e/easy-ext/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/taiki-e/easy-ext/compare/v0.2.4...v0.2.5
