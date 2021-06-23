@@ -1,7 +1,6 @@
 use std::iter;
 
-use proc_macro2::{Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
-use syn::Lifetime;
+use proc_macro::{Group, Ident, Literal, Punct, Span, TokenStream, TokenTree};
 
 pub(crate) trait ToTokens {
     fn to_tokens(&self, tokens: &mut TokenStream);
@@ -12,8 +11,8 @@ pub(crate) trait ToTokens {
         tokens
     }
 
-    fn span(&self) -> Span {
-        // https://github.com/dtolnay/quote/blob/1.0.9/src/spanned.rs
+    fn span(&self) -> (Span, Span) {
+        // Based on https://github.com/dtolnay/quote/blob/1.0.9/src/spanned.rs
         let tokens = self.to_token_stream();
         let mut iter = tokens.into_iter().filter_map(|tt| {
             // FIXME: This shouldn't be required, since optimally spans should
@@ -26,10 +25,10 @@ pub(crate) trait ToTokens {
 
         let first = match iter.next() {
             Some(span) => span,
-            None => return Span::call_site(),
+            None => return (Span::call_site(), Span::call_site()),
         };
 
-        iter.fold(None, |_prev, next| Some(next)).and_then(|last| first.join(last)).unwrap_or(first)
+        (first, iter.last().unwrap_or(first))
     }
 }
 
@@ -57,15 +56,6 @@ impl ToTokens for Group {
     }
 }
 
-impl ToTokens for Lifetime {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        let mut apostrophe = Punct::new('\'', Spacing::Joint);
-        apostrophe.set_span(self.apostrophe);
-        apostrophe.to_tokens(tokens);
-        self.ident.to_tokens(tokens);
-    }
-}
-
 impl ToTokens for TokenTree {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(iter::once(self.clone()));
@@ -81,21 +71,21 @@ impl ToTokens for TokenStream {
 impl<T: ToTokens> ToTokens for Option<T> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         if let Some(t) = self {
-            T::to_tokens(t, tokens)
+            T::to_tokens(t, tokens);
         }
     }
 }
 
 impl<T: ?Sized + ToTokens> ToTokens for &T {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        T::to_tokens(self, tokens)
+        T::to_tokens(self, tokens);
     }
 }
 
 impl<T: ToTokens> ToTokens for [T] {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         for t in self {
-            T::to_tokens(t, tokens)
+            T::to_tokens(t, tokens);
         }
     }
 }

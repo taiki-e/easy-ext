@@ -188,7 +188,7 @@ extern crate proc_macro;
 
 macro_rules! error {
     ($span:expr, $msg:expr) => {
-        syn::Error::new(crate::to_tokens::ToTokens::span(&$span), $msg)
+        crate::Error::new(crate::to_tokens::ToTokens::span(&$span), String::from($msg))
     };
     ($span:expr, $($tt:tt)*) => {
         error!($span, format!($($tt)*))
@@ -196,24 +196,22 @@ macro_rules! error {
 }
 
 mod ast;
+mod error;
 mod iter;
 mod to_tokens;
 
 use std::{collections::hash_map::DefaultHasher, hash::Hasher, iter::FromIterator, mem};
 
-use proc_macro::TokenStream;
-use proc_macro2::{Delimiter, Group, Span, TokenStream as TokenStream2, TokenTree};
-use syn::{
-    parse::{Parse, ParseStream},
-    Error, Ident, Result,
-};
+use proc_macro::{Delimiter, Group, Ident, Span, TokenStream, TokenTree};
 
 use crate::{
     ast::{
-        printing::punct, Attribute, AttributeKind, GenericParam, Generics, ImplItem, ItemImpl,
-        ItemTrait, PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod,
+        parsing, printing::punct, Attribute, AttributeKind, GenericParam, Generics, ImplItem,
+        ItemImpl, ItemTrait, PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod,
         TraitItemType, TypeParam, Visibility, WherePredicate,
     },
+    error::{Error, Result},
+    iter::TokenIter,
     to_tokens::ToTokens,
 };
 
@@ -224,12 +222,18 @@ use crate::{
 /// [rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
-    let mut args: Args = syn::parse_macro_input!(args);
+    let mut args = match parse_args(args) {
+        Ok(args) => args,
+        Err(e) => return e.into_compile_error(),
+    };
     if args.name.is_none() {
         args.name = Some(Ident::new(&format!("__ExtTrait{}", hash(&input)), Span::call_site()));
     }
 
-    let mut item: ItemImpl = syn::parse_macro_input!(input);
+    let mut item: ItemImpl = match parsing::parse_impl(&mut TokenIter::new(input)) {
+        Ok(args) => args,
+        Err(e) => return e.into_compile_error(),
+    };
 
     trait_from_impl(&mut item, args)
         .map(|t| t.to_token_stream())
@@ -238,7 +242,6 @@ pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
             tokens
         })
         .unwrap_or_else(Error::into_compile_error)
-        .into()
 }
 
 struct Args {
@@ -248,12 +251,11 @@ struct Args {
     name: Option<Ident>,
 }
 
-impl Parse for Args {
-    fn parse(input: ParseStream<'_>) -> Result<Self> {
-        let vis: Visibility = input.parse()?;
-        let name: Option<Ident> = input.parse()?;
-        Ok(Args { vis: if vis.is_inherited() { None } else { Some(vis) }, name })
-    }
+fn parse_args(input: TokenStream) -> Result<Args> {
+    let input = &mut TokenIter::new(input);
+    let vis = ast::parsing::parse_visibility(input)?;
+    let name = input.parse_ident_opt();
+    Ok(Args { vis: if vis.is_inherited() { None } else { Some(vis) }, name })
 }
 
 fn determine_trait_generics<'a>(
@@ -263,9 +265,13 @@ fn determine_trait_generics<'a>(
     if self_ty.len() != 1 {
         return None;
     }
-    if let TokenTree::Ident(ident) = &self_ty[0] {
+    if let TokenTree::Ident(self_ty) = &self_ty[0] {
         let i = generics.params.iter().position(|(param, _)| {
-            if let GenericParam::Type(param) = param { param.ident == *ident } else { false }
+            if let GenericParam::Type(param) = param {
+                param.ident.to_string() == self_ty.to_string()
+            } else {
+                false
+            }
         });
         if let Some(i) = i {
             let mut params = mem::replace(&mut generics.params, Vec::new());
@@ -296,7 +302,7 @@ fn determine_trait_generics<'a>(
                 }
             }
 
-            return Some(ident);
+            return Some(self_ty);
         }
     }
     None
@@ -304,23 +310,23 @@ fn determine_trait_generics<'a>(
 
 fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     /// Replace `self_ty` with `Self`.
-    struct ReplaceParam<'a> {
-        self_ty: &'a Ident,
+    struct ReplaceParam {
+        self_ty: String,
         // Restrict the scope for removing `?Trait` bounds, because `?Trait`
         // bounds are only permitted at the point where a type parameter is
         // declared.
         remove_maybe: bool,
     }
 
-    impl ReplaceParam<'_> {
-        fn visit_token_stream(&self, tokens: &mut TokenStream2) -> bool {
+    impl ReplaceParam {
+        fn visit_token_stream(&self, tokens: &mut TokenStream) -> bool {
             let mut out: Vec<TokenTree> = Vec::new();
             let mut modified = false;
             let iter = tokens.clone().into_iter();
             for tt in iter {
                 match tt {
                     TokenTree::Ident(ident) => {
-                        if ident == *self.self_ty {
+                        if ident.to_string() == self.self_ty {
                             modified = true;
                             let self_ = Ident::new("Self", ident.span());
                             out.push(self_.into());
@@ -339,7 +345,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
                 }
             }
             if modified {
-                *tokens = TokenStream2::from_iter(out);
+                *tokens = TokenStream::from_iter(out);
             }
             modified
         }
@@ -387,7 +393,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
                             if self.remove_maybe {
                                 let mut iter = pred.bounded_ty.clone().into_iter();
                                 if let Some(TokenTree::Ident(i)) = iter.next() {
-                                    if iter.next().is_none() && *self.self_ty == i {
+                                    if iter.next().is_none() && self.self_ty == i.to_string() {
                                         let bounds = mem::replace(&mut pred.bounds, Vec::new())
                                             .into_iter()
                                             .filter(|(b, _)| !b.is_maybe)
@@ -421,7 +427,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     let name = args.name.unwrap();
     let mut generics = item.generics.clone();
     let mut visitor = determine_trait_generics(&mut generics, &item.self_ty)
-        .map(|self_ty| ReplaceParam { self_ty, remove_maybe: false });
+        .map(|self_ty| ReplaceParam { self_ty: self_ty.to_string(), remove_maybe: false });
 
     if let Some(visitor) = &mut visitor {
         visitor.remove_maybe = true;
@@ -449,7 +455,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
             if let Some(visitor) = &mut visitor {
                 visitor.visit_trait_item_mut(&mut item);
             }
-            items.push(item)
+            items.push(item);
         })
     })?;
 
@@ -553,7 +559,7 @@ fn trait_item_from_impl_item(
             Ok(TraitItem::Method(TraitItemMethod {
                 attrs,
                 sig: impl_method.sig.clone(),
-                semi_token: ast::printing::punct(';', impl_method.body.span()),
+                semi_token: punct(';', impl_method.body.span()),
             }))
         }
     }

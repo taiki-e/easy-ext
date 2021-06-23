@@ -529,3 +529,33 @@ fn min_const_generics() {
         }
     }
 }
+
+#[test]
+fn macros() {
+    macro_rules! m {
+        (
+            $impl:ident $path:path [$($generics:tt)*] $where:ident {$(
+                [$vis:vis, $($fn_sig:ident)*]
+            )*}
+        ) => {
+            $(
+                #[ext]
+                $impl<T, E> Result<T, E> {
+                    $vis $($fn_sig)* <U>(self) -> Result<T, U>
+                    where
+                        E: Into<U>,
+                    {
+                        unimplemented!()
+                    }
+                }
+            )*
+        };
+    }
+
+    m!(impl Result [T,E] where {
+        [, fn a]
+        [pub, fn b]
+        [pub, unsafe fn c]
+        [pub(crate), fn d]
+    });
+}
