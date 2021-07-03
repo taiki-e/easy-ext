@@ -10,7 +10,9 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
-- Fix bug in parsing of where clause.
+## [0.2.9] - 2021-07-03
+
+- [Fix bug in parsing of where clause.](https://github.com/taiki-e/easy-ext/pull/37)
 
 ## [0.2.8] - 2021-06-23
 
@@ -121,7 +123,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.2.8...HEAD
+[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.2.9...HEAD
+[0.2.9]: https://github.com/taiki-e/easy-ext/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/taiki-e/easy-ext/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/taiki-e/easy-ext/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/taiki-e/easy-ext/compare/v0.2.5...v0.2.6
