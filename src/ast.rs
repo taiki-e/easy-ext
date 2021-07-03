@@ -718,6 +718,7 @@ pub(crate) mod parsing {
                         let is_maybe = input.peek_t(&'?') && !input.peek2_t(&"const");
                         let mut value = vec![];
                         append_tokens_until(input, &mut value, false, |next| match next {
+                            Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => true,
                             Some(TokenTree::Punct(p))
                                 if p.as_char() == ','
                                     || p.as_char() == '>'

@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Fix bug in parsing of where clause.
+
 ## [0.2.8] - 2021-06-23
 
 - [Support specifying visibility directly on `impl`.](https://github.com/taiki-e/easy-ext/pull/31)
