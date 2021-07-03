@@ -559,3 +559,17 @@ fn macros() {
         [pub(crate), fn d]
     });
 }
+
+// https://github.com/taiki-e/easy-ext/issues/36
+#[test]
+fn where_clause() {
+    pub trait Trait<T> {}
+
+    #[rustfmt::skip]
+    #[ext]
+    pub impl<T> Vec<T>
+    where
+        Self: Trait<Vec<T>>
+    {
+    }
+}
