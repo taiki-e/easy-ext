@@ -22,8 +22,6 @@ members = ["tests/doc"]
 [lib]
 proc-macro = true
 
-[dependencies]
-
 [dev-dependencies]
 async-trait = "0.1"
 rustversion = "1"
