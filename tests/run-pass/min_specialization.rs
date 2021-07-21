@@ -1,5 +1,4 @@
 #![feature(min_specialization)]
-#![feature(trusted_random_access)]
 
 // See also ui/min_specialization.rs.
 
@@ -71,26 +70,6 @@ pub mod specialize_on_marker {
 
     impl<T: FusedIterator> X for T {
         fn f() {}
-    }
-}
-
-// https://github.com/rust-lang/rust/blob/7bd62a8f5a4d6d740677aea03c37771258529922/src/test/ui/specialization/min_specialization/specialize_on_spec_trait.rs
-pub mod specialize_on_spec_trait {
-    // `TrustedRandomAccess` is `rustc_specialization_trait` trait:
-    // https://github.com/rust-lang/rust/blob/8212de8eb18a8cc4ab74074f244c386d5e99b281/library/core/src/iter/adapters/zip.rs#L449
-    use std::iter::TrustedRandomAccess;
-
-    use easy_ext::ext;
-
-    #[ext(X)]
-    impl<T> T {
-        default fn f(&self) {}
-    }
-
-    impl<T: TrustedRandomAccess> X for T {
-        fn f(&self) {
-            let _ = T::MAY_HAVE_SIDE_EFFECT;
-        }
     }
 }
 
