@@ -228,26 +228,20 @@ use crate::{
 /// [rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
-    let mut args = match parse_args(args) {
-        Ok(args) => args,
-        Err(e) => return e.into_compile_error(),
-    };
+    ext_inner(args, input).unwrap_or_else(Error::into_compile_error)
+}
+
+fn ext_inner(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
+    let mut args = parse_args(args)?;
     if args.name.is_none() {
         args.name = Some(Ident::new(&format!("__ExtTrait{}", hash(&input)), Span::call_site()));
     }
 
-    let mut item: ItemImpl = match parsing::parse_impl(&mut TokenIter::new(input)) {
-        Ok(args) => args,
-        Err(e) => return e.into_compile_error(),
-    };
+    let mut item: ItemImpl = parsing::parse_impl(&mut TokenIter::new(input))?;
 
-    trait_from_impl(&mut item, args)
-        .map(|t| t.to_token_stream())
-        .map(|mut tokens| {
-            tokens.extend(item.to_token_stream());
-            tokens
-        })
-        .unwrap_or_else(Error::into_compile_error)
+    let mut tokens = trait_from_impl(&mut item, args)?.to_token_stream();
+    tokens.extend(item.to_token_stream());
+    Ok(tokens)
 }
 
 struct Args {
