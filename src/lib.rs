@@ -228,10 +228,10 @@ use crate::{
 /// [rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
-    ext_inner(args, input).unwrap_or_else(Error::into_compile_error)
+    expand(args, input).unwrap_or_else(Error::into_compile_error)
 }
 
-fn ext_inner(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
+fn expand(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let mut args = parse_args(args)?;
     if args.name.is_none() {
         args.name = Some(Ident::new(&format!("__ExtTrait{}", hash(&input)), Span::call_site()));
