@@ -186,12 +186,18 @@
 #[allow(unused_extern_crates)]
 extern crate proc_macro;
 
-macro_rules! error {
+macro_rules! format_err {
     ($span:expr, $msg:expr) => {
         crate::Error::new(crate::to_tokens::ToTokens::span(&$span), String::from($msg))
     };
     ($span:expr, $($tt:tt)*) => {
-        error!($span, format!($($tt)*))
+        format_err!($span, format!($($tt)*))
+    };
+}
+
+macro_rules! bail {
+    ($($tt:tt)*) => {
+        return Err(format_err!($($tt)*))
     };
 }
 
@@ -443,9 +449,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
     match (&impl_vis, &args.vis) {
         (_, None) => {}
         (None, _) => impl_vis = args.vis,
-        (_, span) => {
-            return Err(error!(span, "visibility can only be specified once"));
-        }
+        (_, span) => bail!(span, "visibility can only be specified once"),
     };
     // assoc-item-level visibility
     let mut assoc_vis = None;
@@ -496,24 +500,23 @@ fn trait_item_from_impl_item(
         span: &dyn ToTokens,
     ) -> Result<()> {
         if impl_vis.is_some() {
-            return if current.is_inherited() {
-                Ok(())
-            } else {
-                Err(error!(current, "all associated items must have inherited visibility"))
-            };
+            if current.is_inherited() {
+                return Ok(());
+            }
+            bail!(current, "all associated items must have inherited visibility");
         }
         match prev {
             None => *prev = Some(current),
             Some(prev) if *prev == current => {}
             Some(prev) => {
-                return if prev.is_inherited() {
-                    Err(error!(current, "all associated items must have inherited visibility"))
-                } else {
-                    Err(error!(
-                        if current.is_inherited() { span } else { &current },
-                        "all associated items must have a visibility of `{}`", prev,
-                    ))
-                };
+                if prev.is_inherited() {
+                    bail!(current, "all associated items must have inherited visibility");
+                }
+                bail!(
+                    if current.is_inherited() { span } else { &current },
+                    "all associated items must have a visibility of `{}`",
+                    prev,
+                );
             }
         }
         Ok(())

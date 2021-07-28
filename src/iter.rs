@@ -116,7 +116,7 @@ impl TokenIter {
         match self.next() {
             Some(TokenTree::Ident(i)) => Ok(i),
             // TODO: pass scope span if tt is None
-            tt => Err(error!(tt, "expected identifier")),
+            tt => bail!(tt, "expected identifier"),
         }
     }
 
@@ -132,7 +132,7 @@ impl TokenIter {
                 if let Some(TokenTree::Ident(i)) = tt { Ok(i) } else { unreachable!() }
             }
             // TODO: pass scope span if tt is None
-            tt => Err(error!(tt, "expected `{}`", kw)),
+            tt => bail!(tt, "expected `{}`", kw),
         }
     }
 
@@ -161,7 +161,7 @@ impl TokenIter {
                 if let Some(TokenTree::Punct(p)) = tt { Ok(p) } else { unreachable!() }
             }
             // TODO: pass scope span if tt is None
-            tt => Err(error!(tt, "expected `{}`", ch)),
+            tt => bail!(tt, "expected `{}`", ch),
         }
     }
 
@@ -194,7 +194,7 @@ impl TokenIter {
                     Delimiter::None => "none-delimited group",
                 };
                 // TODO: pass scope span if tt is None
-                Err(error!(tt, "expected {}", d))
+                bail!(tt, "expected {}", d)
             }
         }
     }
@@ -210,7 +210,7 @@ impl TokenIter {
         match self.next() {
             Some(TokenTree::Literal(l)) => Ok(l),
             // TODO: pass scope span if tt is None
-            tt => Err(error!(tt, "expected literal")),
+            tt => bail!(tt, "expected literal"),
         }
     }
 
@@ -222,7 +222,7 @@ impl TokenIter {
     pub(crate) fn tt(&mut self) -> Result<TokenTree> {
         self.next().ok_or_else(|| {
             // TODO: pass scope span
-            error!(TokenStream::new(), "unexpected end of input")
+            format_err!(TokenStream::new(), "unexpected end of input")
         })
     }
 }

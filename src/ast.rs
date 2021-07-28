@@ -337,7 +337,7 @@ pub(crate) mod parsing {
                 }
                 None => {
                     // TODO: pass scope span
-                    return Err(error!(TokenStream::new(), "expected `{}`", ch));
+                    bail!(TokenStream::new(), "expected `{}`", ch);
                 }
                 Some(tt) => buf.push(tt),
             }
@@ -382,7 +382,7 @@ pub(crate) mod parsing {
             }
             buf.push(input.next().ok_or_else(|| {
                 // TODO: pass scope span
-                error!(TokenStream::new(), "unexpected end of input")
+                format_err!(TokenStream::new(), "unexpected end of input")
             })?);
         }
     }
@@ -442,10 +442,7 @@ pub(crate) mod parsing {
             } else if input.peek_ident().is_some() {
                 GenericParam::Type(TypeParam { attrs, ..parse_type_param(input)? })
             } else {
-                return Err(error!(
-                    input.next(),
-                    "expected one of: lifetime, identifier, `const`, `_`"
-                ));
+                bail!(input.next(), "expected one of: lifetime, identifier, `const`, `_`");
             };
 
             if input.peek_t(&'>') {
@@ -472,15 +469,14 @@ pub(crate) mod parsing {
             Some(TokenTree::Punct(p)) if p.as_char() == '\'' && p.spacing() == Spacing::Joint => {
                 match input.next() {
                     Some(TokenTree::Ident(ident)) => Ok(Lifetime { apostrophe: p.span(), ident }),
-                    Some(tt2) => Err(error!(
-                        TokenStream::from_iter(vec![tt.unwrap(), tt2]),
-                        "expected lifetime"
-                    )),
-                    None => Err(error!(p, "expected lifetime")),
+                    Some(tt2) => {
+                        bail!(TokenStream::from_iter(vec![tt.unwrap(), tt2]), "expected lifetime")
+                    }
+                    None => bail!(p, "expected lifetime"),
                 }
             }
             // TODO: pass scope span if tt is None
-            tt => Err(error!(tt, "expected lifetime")),
+            tt => bail!(tt, "expected lifetime"),
         }
     }
 
@@ -587,7 +583,7 @@ pub(crate) mod parsing {
             Some(TokenTree::Literal(_)) | Some(TokenTree::Ident(_)) => Ok(tt.unwrap()),
             Some(TokenTree::Group(g)) if g.delimiter() == Delimiter::Brace => Ok(tt.unwrap()),
             // TODO: pass scope span if tt is None
-            _ => Err(error!(tt, "expected one of: literal, ident, `{`")),
+            _ => bail!(tt, "expected one of: literal, ident, `{`"),
         }
     }
 
@@ -897,7 +893,7 @@ pub(crate) mod parsing {
                 semi_token,
             }))
         } else {
-            Err(error!(input.next(), "expected one of: `default`, `fn`, `const`, `type`"))
+            bail!(input.next(), "expected one of: `default`, `fn`, `const`, `type`")
         }
     }
 
