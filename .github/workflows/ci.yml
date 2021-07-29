@@ -11,6 +11,7 @@ on:
       - staging
   schedule:
     - cron: '40 1 * * *'
+  workflow_dispatch:
 
 env:
   CARGO_INCREMENTAL: 0
@@ -39,7 +40,7 @@ jobs:
       - uses: taiki-e/github-actions/install-rust@main
         with:
           toolchain: ${{ matrix.rust }}
-      - run: cargo install cargo-hack
+      - run: cargo install cargo-hack --debug
         if: startsWith(matrix.rust, 'nightly')
       - run: cargo test --all
       - run: tools/check-minimal-versions.sh
@@ -47,23 +48,21 @@ jobs:
 
   build:
     strategy:
-      fail-fast: false
       matrix:
         range:
           # This is the minimum supported Rust version of this crate.
           # When updating this, the reminder to update the minimum supported
           # Rust version in README.md and .clippy.toml.
-          - 1.31..1.40
-          - 1.41..
+          - 1.31..
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:
           persist-credentials: false
-      - run: cargo install cargo-hack
-      - run: cargo hack build --all --ignore-private --no-dev-deps --version-range ${{ matrix.range }}
+      - run: cargo install cargo-hack --debug
+      - run: cargo hack build --all --ignore-private --no-dev-deps --version-range ${{ matrix.range }} --version-step 2
 
-  clippy:
+  tidy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -71,19 +70,12 @@ jobs:
           persist-credentials: false
       - uses: taiki-e/github-actions/install-rust@main
         with:
-          component: clippy
+          component: clippy,rustfmt
       - run: cargo clippy --all --all-features --all-targets
-
-  fmt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          persist-credentials: false
-      - uses: taiki-e/github-actions/install-rust@main
-        with:
-          component: rustfmt
       - run: cargo fmt --all -- --check
+        if: always()
+      - run: shellcheck **/*.sh
+        if: always()
 
   docs:
     runs-on: ubuntu-latest
@@ -95,14 +87,6 @@ jobs:
       - run: cargo doc --no-deps --all --all-features
         env:
           RUSTDOCFLAGS: -D warnings
-
-  shellcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          persist-credentials: false
-      - run: shellcheck **/*.sh
 
   # This job doesn't actually test anything, but they're used to tell bors the
   # build completed, as there is no practical way to detect when a workflow is
@@ -116,10 +100,8 @@ jobs:
     needs:
       - test
       - build
-      - clippy
-      - fmt
+      - tidy
       - docs
-      - shellcheck
     runs-on: ubuntu-latest
     steps:
       - name: Mark the job as a success
