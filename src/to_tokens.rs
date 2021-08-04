@@ -20,7 +20,11 @@ pub(crate) trait ToTokens {
             // https://github.com/rust-lang/rust/issues/43081 is resolved.
             let span = tt.span();
             let debug = format!("{:?}", span);
-            if debug.ends_with("bytes(0..0)") { None } else { Some(span) }
+            if debug.ends_with("bytes(0..0)") {
+                None
+            } else {
+                Some(span)
+            }
         });
 
         let first = match iter.next() {
