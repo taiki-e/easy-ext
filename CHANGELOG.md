@@ -21,8 +21,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
   - impl Type {
   + #[ext]
   + pub impl Type {
-      fn method(&self) {}
-  }
+        fn method(&self) {}
+    }
   ```
 
 ## [0.2.9] - 2021-07-03
