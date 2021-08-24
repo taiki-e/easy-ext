@@ -43,16 +43,6 @@ fn lifetime() {
     let _: Option<&u8> = (&mut Some(1)).into_ref();
 }
 
-/*
-
-## Visibility
-
-* The generated extension trait inherits the visibility of the item in the original `impl`.
-
-* The visibility of all the items in the original `impl` must be identical.
-
-*/
-
 mod bar {
     use easy_ext::ext;
 
