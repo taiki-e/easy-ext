@@ -30,25 +30,12 @@ pub(crate) struct Error {
 
 impl Error {
     pub(crate) fn new(tokens: &dyn ToTokens, msg: String) -> Self {
-        // Based on https://github.com/dtolnay/quote/blob/1.0.9/src/spanned.rs
-        let tokens = tokens.to_token_stream();
-        let mut iter = tokens.into_iter().filter_map(|tt| {
-            // FIXME: This shouldn't be required, since optimally spans should
-            // never be invalid. This filter_map can probably be removed when
-            // https://github.com/rust-lang/rust/issues/43081 is resolved.
-            let span = tt.span();
-            let debug = format!("{:?}", span);
-            if debug.ends_with("bytes(0..0)") {
-                None
-            } else {
-                Some(span)
-            }
-        });
-        let start_span = match iter.next() {
-            Some(span) => span,
-            None => Span::call_site(),
-        };
-        let end_span = iter.last().unwrap_or(start_span);
+        let mut iter = tokens.to_token_stream().into_iter();
+        // `Span` on stable Rust has a limitation that only points to the first
+        // token, not the whole tokens. We can work around this limitation by
+        // using the first/last span of the tokens like `syn::Error::new_spanned` does.
+        let start_span = iter.next().map_or_else(Span::call_site, |t| t.span());
+        let end_span = iter.last().map_or(start_span, |t| t.span());
 
         Self { start_span, end_span, msg }
     }
