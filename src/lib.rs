@@ -219,30 +219,30 @@ pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
 }
 
 fn expand(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
-    let mut args = parse_args(args)?;
-    if args.name.is_none() {
-        args.name = Some(Ident::new(&format!("__ExtTrait{}", hash(&input)), Span::call_site()));
-    }
+    let trait_name = match parse_args(args)? {
+        None => Ident::new(&format!("__ExtTrait{}", hash(&input)), Span::call_site()),
+        Some(trait_name) => trait_name,
+    };
 
     let mut item: ItemImpl = parsing::parse_impl(&mut TokenIter::new(input))?;
 
-    let mut tokens = trait_from_impl(&mut item, args)?.to_token_stream();
+    let mut tokens = trait_from_impl(&mut item, trait_name)?.to_token_stream();
     tokens.extend(item.to_token_stream());
     Ok(tokens)
 }
 
-struct Args {
-    // impl-level visibility
-    vis: Option<Visibility>,
-    // trait name
-    name: Option<Ident>,
-}
-
-fn parse_args(input: TokenStream) -> Result<Args> {
+fn parse_args(input: TokenStream) -> Result<Option<Ident>> {
     let input = &mut TokenIter::new(input);
     let vis = ast::parsing::parse_visibility(input)?;
-    let name = input.parse_ident_opt();
-    Ok(Args { vis: if vis.is_inherited() { None } else { Some(vis) }, name })
+    if !vis.is_inherited() {
+        bail!(vis, "use `{} impl` instead", vis);
+    }
+    let trait_name = input.parse_ident_opt();
+    if !input.is_empty() {
+        let tt = input.next().unwrap();
+        bail!(tt, "unexpected token: `{}`", tt);
+    }
+    Ok(trait_name)
 }
 
 fn determine_trait_generics<'a>(
@@ -295,7 +295,7 @@ fn determine_trait_generics<'a>(
     None
 }
 
-fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
+fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> {
     /// Replace `self_ty` with `Self`.
     struct ReplaceParam {
         self_ty: String,
@@ -411,7 +411,6 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         }
     }
 
-    let name = args.name.unwrap();
     let mut generics = item.generics.clone();
     let mut visitor = determine_trait_generics(&mut generics, &item.self_ty)
         .map(|self_ty| ReplaceParam { self_ty: self_ty.to_string(), remove_maybe: false });
@@ -422,16 +421,14 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         visitor.remove_maybe = false;
     }
     let ty_generics = generics.ty_generics();
-    item.trait_ =
-        Some((name.clone(), ty_generics.to_token_stream(), Ident::new("for", Span::call_site())));
+    item.trait_ = Some((
+        trait_name.clone(),
+        ty_generics.to_token_stream(),
+        Ident::new("for", Span::call_site()),
+    ));
 
     // impl-level visibility
-    let mut impl_vis = if item.vis.is_inherited() { None } else { Some(item.vis.clone()) };
-    match (&impl_vis, &args.vis) {
-        (_, None) => {}
-        (None, _) => impl_vis = args.vis,
-        (_, span) => bail!(span, "visibility can only be specified once"),
-    };
+    let impl_vis = if item.vis.is_inherited() { None } else { Some(item.vis.clone()) };
     // assoc-item-level visibility
     let mut assoc_vis = None;
     let mut items = Vec::with_capacity(item.items.len());
@@ -462,7 +459,7 @@ fn trait_from_impl(item: &mut ItemImpl, args: Args) -> Result<ItemTrait> {
         vis: impl_vis.unwrap_or_else(|| assoc_vis.unwrap_or(Visibility::Inherited)),
         unsafety: item.unsafety.clone(),
         trait_token: Ident::new("trait", item.impl_token.span()),
-        ident: name,
+        ident: trait_name,
         generics,
         brace_token: item.brace_token,
         items,

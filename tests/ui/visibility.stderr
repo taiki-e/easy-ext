@@ -1,7 +1,7 @@
 error[E0603]: trait `StrExt1` is private
-  --> $DIR/visibility.rs:34:14
+  --> $DIR/visibility.rs:35:14
    |
-34 |     use foo::StrExt1; //~ ERROR trait `StrExt1` is private [E0603]
+35 |     use foo::StrExt1; //~ ERROR trait `StrExt1` is private [E0603]
    |              ^^^^^^^ private trait
    |
 note: the trait `StrExt1` is defined here
@@ -11,9 +11,9 @@ note: the trait `StrExt1` is defined here
    |     ^^^^^^^^
 
 error[E0603]: trait `StrExt2` is private
-  --> $DIR/visibility.rs:36:14
+  --> $DIR/visibility.rs:37:14
    |
-36 |     use foo::StrExt2; //~ ERROR trait `StrExt2` is private [E0603]
+37 |     use foo::StrExt2; //~ ERROR trait `StrExt2` is private [E0603]
    |              ^^^^^^^ private trait
    |
 note: the trait `StrExt2` is defined here
@@ -23,9 +23,9 @@ note: the trait `StrExt2` is defined here
    |     ^^^^^^^^^^^^^^^^^^
 
 error[E0603]: trait `StrExt3` is private
-  --> $DIR/visibility.rs:38:19
+  --> $DIR/visibility.rs:39:19
    |
-38 |     use foo::bar::StrExt3; //~ ERROR trait `StrExt2` is private [E0603]
+39 |     use foo::bar::StrExt3; //~ ERROR trait `StrExt2` is private [E0603]
    |                   ^^^^^^^ private trait
    |
 note: the trait `StrExt3` is defined here

@@ -18,6 +18,16 @@ mod basic {
     impl str {
         mac!(); //~ ERROR expected one of: `default`, `fn`, `const`, `type`
     }
+
+    #[rustfmt::skip]
+    #[ext(ExtraArg,)] //~ ERROR unexpected token: `,`
+    impl str {}
+
+    #[ext(pub OldVisSyntax1)] //~ ERROR use `pub impl` instead
+    impl str {}
+
+    #[ext(pub(crate) OldVisSyntax2)] //~ ERROR use `pub(crate) impl` instead
+    impl str {}
 }
 
 mod visibility {
@@ -47,18 +57,6 @@ mod visibility {
         fn assoc1(&self) {}
 
         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
-    }
-
-    #[ext(pub ImplLevel2)]
-    impl str {
-        fn assoc1(&self) {}
-
-        pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
-    }
-
-    #[ext(pub ImplLevel3)] //~ ERROR visibility can only be specified once
-    pub impl str {
-        fn assoc(&self) {}
     }
 }
 

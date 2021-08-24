@@ -10,6 +10,19 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Remove deprecated old impl-level visibility syntax (`#[ext(pub)]`).
+
+  Use `pub impl` syntax instead:
+
+  ```diff
+  - #[ext(pub)]
+  - impl Type {
+  + #[ext]
+  + pub impl Type {
+      fn method(&self) {}
+  }
+  ```
+
 ## [0.2.9] - 2021-07-03
 
 - [Fix bug in parsing of where clause.](https://github.com/taiki-e/easy-ext/pull/37)

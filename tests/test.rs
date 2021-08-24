@@ -86,26 +86,6 @@ mod bar {
         }
     }
 
-    // impl-level visibility (old syntax) + named
-    #[ext(pub E3)]
-    impl str {
-        const FOO5: &'static str = "_";
-
-        fn foo5(&self, pat: &str) -> String {
-            self.replace(pat, Self::FOO5)
-        }
-    }
-
-    // impl-level visibility (old syntax) + unnamed
-    #[ext(pub)]
-    impl str {
-        const FOO6: &'static str = "_";
-
-        fn foo6(&self, pat: &str) -> String {
-            self.replace(pat, Self::FOO6)
-        }
-    }
-
     pub(super) mod baz {
         use easy_ext::ext;
 
@@ -144,24 +124,6 @@ mod bar {
                 self.replace(pat, "-")
             }
         }
-
-        #[ext(pub(super) E8)]
-        impl str {
-            fn bar2(&self, pat: &str) -> String {
-                self.replace(pat, "_")
-            }
-        }
-
-        #[ext(pub(crate) E9)]
-        impl str {
-            fn baz3(&self, pat: &str) -> String {
-                self.replace(pat, "_")
-            }
-
-            fn baz4(&self, pat: &str) -> String {
-                self.replace(pat, "-")
-            }
-        }
     }
 }
 
@@ -169,12 +131,11 @@ mod bar {
 fn visibility() {
     use self::bar::{
         baz::{E5, E7},
-        E1, E2, E3,
+        E1, E2,
     };
 
     assert_eq!("..".foo1("."), "__");
     assert_eq!("..".foo3("."), "__");
-    assert_eq!("..".foo5("."), "__");
     assert_eq!("..".baz("."), "__");
     assert_eq!("..".baz2("."), "--");
     assert_eq!("..".baz3("."), "__");
