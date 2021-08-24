@@ -1,6 +1,6 @@
 use std::iter;
 
-use proc_macro::{Group, Ident, Literal, Punct, TokenStream, TokenTree};
+use proc_macro::{Group, Ident, Punct, TokenStream, TokenTree};
 
 pub(crate) trait ToTokens {
     fn to_tokens(&self, tokens: &mut TokenStream);
@@ -21,12 +21,6 @@ impl ToTokens for Ident {
 impl ToTokens for Punct {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(iter::once(TokenTree::Punct(self.clone())));
-    }
-}
-
-impl ToTokens for Literal {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        tokens.extend(iter::once(TokenTree::Literal(self.clone())));
     }
 }
 
