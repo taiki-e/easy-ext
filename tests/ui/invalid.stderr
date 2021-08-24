@@ -22,38 +22,44 @@ error: expected one of: `default`, `fn`, `const`, `type`
 19 |         mac!(); //~ ERROR expected one of: `default`, `fn`, `const`, `type`
    |         ^^^
 
-error: all associated items must have a visibility of `pub`
-  --> $DIR/invalid.rs:29:15
+error: unexpected token: `,`
+  --> $DIR/invalid.rs:23:19
    |
-29 |         const ASSOC2: u8 = 2; //~ ERROR all associated items must have a visibility of `pub`
+23 |     #[ext(ExtraArg,)] //~ ERROR unexpected token: `,`
+   |                   ^
+
+error: use `pub impl` instead
+  --> $DIR/invalid.rs:26:11
+   |
+26 |     #[ext(pub OldVisSyntax1)] //~ ERROR use `pub impl` instead
+   |           ^^^
+
+error: use `pub(crate) impl` instead
+  --> $DIR/invalid.rs:29:11
+   |
+29 |     #[ext(pub(crate) OldVisSyntax2)] //~ ERROR use `pub(crate) impl` instead
+   |           ^^^^^^^^^^
+
+error: all associated items must have a visibility of `pub`
+  --> $DIR/invalid.rs:39:15
+   |
+39 |         const ASSOC2: u8 = 2; //~ ERROR all associated items must have a visibility of `pub`
    |               ^^^^^^
 
 error: all associated items must have inherited visibility
-  --> $DIR/invalid.rs:36:9
+  --> $DIR/invalid.rs:46:9
    |
-36 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+46 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
    |         ^^^
 
 error: all associated items must have a visibility of `pub(crate)`
-  --> $DIR/invalid.rs:42:9
+  --> $DIR/invalid.rs:52:9
    |
-42 |         pub type Assoc2 = (); //~ ERROR all associated items must have a visibility of `pub(crate)`
+52 |         pub type Assoc2 = (); //~ ERROR all associated items must have a visibility of `pub(crate)`
    |         ^^^
 
 error: all associated items must have inherited visibility
-  --> $DIR/invalid.rs:49:9
+  --> $DIR/invalid.rs:59:9
    |
-49 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+59 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
    |         ^^^
-
-error: all associated items must have inherited visibility
-  --> $DIR/invalid.rs:56:9
-   |
-56 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
-   |         ^^^
-
-error: visibility can only be specified once
-  --> $DIR/invalid.rs:59:11
-   |
-59 |     #[ext(pub ImplLevel3)] //~ ERROR visibility can only be specified once
-   |           ^^^

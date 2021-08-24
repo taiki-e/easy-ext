@@ -31,9 +31,10 @@ mod foo {
 }
 
 fn main() {
+    #[rustfmt::skip]
     use foo::StrExt1; //~ ERROR trait `StrExt1` is private [E0603]
-    let _: ();
+    #[rustfmt::skip]
     use foo::StrExt2; //~ ERROR trait `StrExt2` is private [E0603]
-    let _: ();
+    #[rustfmt::skip]
     use foo::bar::StrExt3; //~ ERROR trait `StrExt2` is private [E0603]
 }
