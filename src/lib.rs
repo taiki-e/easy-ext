@@ -186,23 +186,10 @@
 #[allow(unused_extern_crates)]
 extern crate proc_macro;
 
-macro_rules! format_err {
-    ($span:expr, $msg:expr) => {
-        crate::Error::new(crate::to_tokens::ToTokens::span(&$span), String::from($msg))
-    };
-    ($span:expr, $($tt:tt)*) => {
-        format_err!($span, format!($($tt)*))
-    };
-}
-
-macro_rules! bail {
-    ($($tt:tt)*) => {
-        return Err(format_err!($($tt)*))
-    };
-}
+#[macro_use]
+mod error;
 
 mod ast;
-mod error;
 mod iter;
 mod to_tokens;
 

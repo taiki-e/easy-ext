@@ -2,6 +2,23 @@ use std::iter::FromIterator;
 
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
+use crate::to_tokens::ToTokens;
+
+macro_rules! format_err {
+    ($span:expr, $msg:expr $(,)?) => {
+        crate::Error::new(&$span, String::from($msg))
+    };
+    ($span:expr, $($tt:tt)*) => {
+        format_err!($span, format!($($tt)*))
+    };
+}
+
+macro_rules! bail {
+    ($($tt:tt)*) => {
+        return Err(format_err!($($tt)*))
+    };
+}
+
 pub(crate) type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug)]
@@ -12,7 +29,8 @@ pub(crate) struct Error {
 }
 
 impl Error {
-    pub(crate) fn new((start_span, end_span): (Span, Span), msg: String) -> Self {
+    pub(crate) fn new(tokens: &dyn ToTokens, msg: String) -> Self {
+        let (start_span, end_span) = tokens.span();
         Self { start_span, end_span, msg }
     }
 
