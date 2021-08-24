@@ -10,7 +10,7 @@ An attribute macro for easily writing [extension trait pattern][rfc0445].
 
 ```toml
 [dependencies]
-easy-ext = "0.2"
+easy-ext = "1"
 ```
 
 *Compiler support: requires rustc 1.31+*

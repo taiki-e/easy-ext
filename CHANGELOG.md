@@ -10,7 +10,9 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
-- Remove deprecated old impl-level visibility syntax (`#[ext(pub)]`).
+## [1.0.0] - 2021-08-24
+
+- [Remove deprecated old impl-level visibility syntax (`#[ext(pub)]`).](https://github.com/taiki-e/easy-ext/pull/38)
 
   Use `pub impl` syntax instead:
 
@@ -138,7 +140,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 Initial release
 
-[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v0.2.9...HEAD
+[Unreleased]: https://github.com/taiki-e/easy-ext/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/taiki-e/easy-ext/compare/v0.2.9...v1.0.0
 [0.2.9]: https://github.com/taiki-e/easy-ext/compare/v0.2.8...v0.2.9
 [0.2.8]: https://github.com/taiki-e/easy-ext/compare/v0.2.7...v0.2.8
 [0.2.7]: https://github.com/taiki-e/easy-ext/compare/v0.2.6...v0.2.7
