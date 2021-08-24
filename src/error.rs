@@ -5,7 +5,7 @@ use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenSt
 use crate::to_tokens::ToTokens;
 
 macro_rules! format_err {
-    ($span:expr, $msg:expr $(,)?) => {
+    ($span:expr, $msg:expr $(,)*) => {
         crate::Error::new(&$span, String::from($msg))
     };
     ($span:expr, $($tt:tt)*) => {
@@ -30,7 +30,26 @@ pub(crate) struct Error {
 
 impl Error {
     pub(crate) fn new(tokens: &dyn ToTokens, msg: String) -> Self {
-        let (start_span, end_span) = tokens.span();
+        // Based on https://github.com/dtolnay/quote/blob/1.0.9/src/spanned.rs
+        let tokens = tokens.to_token_stream();
+        let mut iter = tokens.into_iter().filter_map(|tt| {
+            // FIXME: This shouldn't be required, since optimally spans should
+            // never be invalid. This filter_map can probably be removed when
+            // https://github.com/rust-lang/rust/issues/43081 is resolved.
+            let span = tt.span();
+            let debug = format!("{:?}", span);
+            if debug.ends_with("bytes(0..0)") {
+                None
+            } else {
+                Some(span)
+            }
+        });
+        let start_span = match iter.next() {
+            Some(span) => span,
+            None => Span::call_site(),
+        };
+        let end_span = iter.last().unwrap_or(start_span);
+
         Self { start_span, end_span, msg }
     }
 

@@ -1,6 +1,6 @@
 use std::iter;
 
-use proc_macro::{Group, Ident, Literal, Punct, Span, TokenStream, TokenTree};
+use proc_macro::{Group, Ident, Literal, Punct, TokenStream, TokenTree};
 
 pub(crate) trait ToTokens {
     fn to_tokens(&self, tokens: &mut TokenStream);
@@ -9,30 +9,6 @@ pub(crate) trait ToTokens {
         let mut tokens = TokenStream::new();
         self.to_tokens(&mut tokens);
         tokens
-    }
-
-    fn span(&self) -> (Span, Span) {
-        // Based on https://github.com/dtolnay/quote/blob/1.0.9/src/spanned.rs
-        let tokens = self.to_token_stream();
-        let mut iter = tokens.into_iter().filter_map(|tt| {
-            // FIXME: This shouldn't be required, since optimally spans should
-            // never be invalid. This filter_map can probably be removed when
-            // https://github.com/rust-lang/rust/issues/43081 is resolved.
-            let span = tt.span();
-            let debug = format!("{:?}", span);
-            if debug.ends_with("bytes(0..0)") {
-                None
-            } else {
-                Some(span)
-            }
-        });
-
-        let first = match iter.next() {
-            Some(span) => span,
-            None => return (Span::call_site(), Span::call_site()),
-        };
-
-        (first, iter.last().unwrap_or(first))
     }
 }
 
