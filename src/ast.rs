@@ -12,7 +12,7 @@ pub(crate) struct Lifetime {
     pub(crate) ident: Ident,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub(crate) struct Generics {
     pub(crate) lt_token: Option<Punct>,
     pub(crate) params: Vec<(GenericParam, Option<Punct>)>,
@@ -34,12 +34,6 @@ impl Generics {
 
     pub(crate) fn ty_generics(&self) -> TypeGenerics<'_> {
         TypeGenerics(self)
-    }
-}
-
-impl Default for Generics {
-    fn default() -> Self {
-        Self { lt_token: None, params: Vec::new(), gt_token: None, where_clause: None }
     }
 }
 
