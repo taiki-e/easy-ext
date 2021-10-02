@@ -1,23 +1,23 @@
 error: `?Trait` bounds are only permitted at the point where a type parameter is declared
-  --> $DIR/maybe.rs:22:5
+  --> $DIR/maybe.rs:22:11
    |
 22 |     Self: ?Sized, //~ ERROR `?Trait` bounds are only permitted at the point where a type parameter is declared
-   |     ^^^^
+   |           ^^^^^^
 
 error: `?Trait` bounds are only permitted at the point where a type parameter is declared
-  --> $DIR/maybe.rs:31:5
+  --> $DIR/maybe.rs:31:11
    |
 31 |     Self: ?Sized,
-   |     ^^^^
+   |           ^^^^^^
 
 error: `?Trait` bounds are only permitted at the point where a type parameter is declared
-  --> $DIR/maybe.rs:42:5
+  --> $DIR/maybe.rs:42:11
    |
 42 |     Self: ?Sized, //~ ERROR `?Trait` bounds are only permitted at the point where a type parameter is declared
-   |     ^^^^
+   |           ^^^^^^
 
 error: `?Trait` bounds are only permitted at the point where a type parameter is declared
-  --> $DIR/maybe.rs:71:9
+  --> $DIR/maybe.rs:71:12
    |
 71 |         T: ?Sized, //~ ERROR `?Trait` bounds are only permitted at the point where a type parameter is declared
-   |         ^
+   |            ^^^^^^
