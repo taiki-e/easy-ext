@@ -55,22 +55,4 @@ pub mod spec_reference {
     }
 }
 
-// https://github.com/rust-lang/rust/blob/7bd62a8f5a4d6d740677aea03c37771258529922/src/test/ui/specialization/min_specialization/specialize_on_marker.rs
-pub mod specialize_on_marker {
-    // `FusedIterator` is `rustc_unsafe_specialization_marker` trait:
-    // https://github.com/rust-lang/rust/blob/7bd62a8f5a4d6d740677aea03c37771258529922/library/core/src/iter/traits/marker.rs#L14
-    use std::iter::FusedIterator;
-
-    use easy_ext::ext;
-
-    #[ext(X)]
-    impl<T> T {
-        default fn f() {}
-    }
-
-    impl<T: FusedIterator> X for T {
-        fn f() {}
-    }
-}
-
 fn main() {}
