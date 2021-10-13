@@ -25,4 +25,4 @@ proc-macro = true
 [dev-dependencies]
 async-trait = "0.1"
 rustversion = "1"
-trybuild = "1"
+trybuild = "1.0.49"

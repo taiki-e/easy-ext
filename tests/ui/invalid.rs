@@ -20,7 +20,7 @@ mod basic {
     }
 
     #[rustfmt::skip]
-    #[ext(ExtraArg,)] //~ ERROR unexpected token: `,`
+    #[ext(ExtraArg,)] //~ ERROR unexpected token
     impl str {}
 
     #[ext(pub OldVisSyntax1)] //~ ERROR use `pub impl` instead
