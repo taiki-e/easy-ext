@@ -1,4 +1,3 @@
-#![allow(incomplete_features)]
 #![feature(const_trait_impl)]
 
 // https://github.com/rust-lang/rust/issues/67792

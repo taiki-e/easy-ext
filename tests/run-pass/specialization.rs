@@ -1,7 +1,7 @@
 #![allow(incomplete_features)]
 #![feature(specialization)]
 
-// See also run-pass/min_specialization.rs and ui/min_specialization.rs.
+// See also run-pass/min_specialization.rs.
 
 pub mod default_impl {
     // I don't feel `default impl` is the good feature to combine with ext trait, but test anyway.

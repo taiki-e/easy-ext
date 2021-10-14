@@ -1,4 +1,3 @@
-#![allow(incomplete_features)]
 #![feature(generic_associated_types)]
 
 // https://github.com/rust-lang/rust/blob/7bd62a8f5a4d6d740677aea03c37771258529922/src/test/ui/generic-associated-types/collections.rs

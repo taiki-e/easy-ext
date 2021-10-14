@@ -1,6 +1,6 @@
 #![feature(min_specialization)]
 
-// See also ui/min_specialization.rs.
+// See also run-pass/specialization.rs.
 
 // https://github.com/rust-lang/rust/blob/7bd62a8f5a4d6d740677aea03c37771258529922/src/test/ui/specialization/min_specialization/implcit-well-formed-bounds.rs
 pub mod implcit_well_formed_bounds {
