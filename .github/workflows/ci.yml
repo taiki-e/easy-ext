@@ -40,11 +40,7 @@ jobs:
       - uses: taiki-e/github-actions/install-rust@main
         with:
           toolchain: ${{ matrix.rust }}
-      - run: cargo install cargo-hack --debug
-        if: startsWith(matrix.rust, 'nightly')
       - run: cargo test --all
-      - run: tools/check-minimal-versions.sh
-        if: startsWith(matrix.rust, 'nightly')
 
   build:
     strategy:
@@ -71,8 +67,12 @@ jobs:
       - uses: taiki-e/github-actions/install-rust@main
         with:
           component: clippy,rustfmt
-      - run: cargo clippy --all --all-features --all-targets
+      - run: cargo install cargo-hack --debug
       - run: cargo fmt --all -- --check
+        if: always()
+      - run: cargo clippy --all --all-features --all-targets
+        if: always()
+      - run: tools/check-minimal-versions.sh
         if: always()
       - run: shellcheck **/*.sh
         if: always()
