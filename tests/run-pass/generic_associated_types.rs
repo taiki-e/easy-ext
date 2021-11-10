@@ -19,6 +19,7 @@ pub mod collections {
         type Iter<'iter>
         where
             T: 'iter,
+            Self: 'iter,
         = std::slice::Iter<'iter, T>;
         type Family = VecFamily;
         type Sibling<U> = <<Self as Collection<T>>::Family as CollectionFamily>::Member<U>;
