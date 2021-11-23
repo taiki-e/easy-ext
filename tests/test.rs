@@ -281,19 +281,10 @@ fn inline() {
     impl str {
         #[inline]
         fn auto(&self) {}
-        #[inline]
-        #[inline]
-        fn auto2(&self) {}
         #[inline(always)]
         fn always(&self) {}
-        #[inline(always)]
-        #[inline(always)]
-        fn always2(&self) {}
         #[inline(never)]
         fn never(&self) {}
-        #[inline(never)]
-        #[inline(never)]
-        fn never2(&self) {}
     }
 }
 
