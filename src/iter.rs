@@ -24,6 +24,7 @@ impl TokenIter {
         }
     }
 
+    #[allow(clippy::wrong_self_convention)]
     pub(crate) fn is_empty(&mut self) -> bool {
         self.peek().is_none()
     }
