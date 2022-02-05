@@ -41,7 +41,7 @@ fn lifetime() {
         }
     }
 
-    let _: Option<&u8> = (&mut Some(1)).into_ref();
+    let _: Option<&u8> = Some(1).into_ref();
 }
 
 mod bar {
