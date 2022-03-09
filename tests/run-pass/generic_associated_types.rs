@@ -1,6 +1,6 @@
 #![feature(generic_associated_types)]
 
-// https://github.com/rust-lang/rust/blob/7bd62a8f5a4d6d740677aea03c37771258529922/src/test/ui/generic-associated-types/collections.rs
+// https://github.com/rust-lang/rust/blob/803a7593044457cc8436847196752405cf023fb5/src/test/ui/generic-associated-types/collections.rs
 pub mod collections {
     use easy_ext::ext;
 
@@ -16,11 +16,11 @@ pub mod collections {
 
     #[ext(Collection)]
     impl<T> Vec<T> {
-        type Iter<'iter>
-        where
-            T: 'iter,
-            Self: 'iter,
-        = std::slice::Iter<'iter, T>;
+        // TODO: handle where clause in GAT: https://github.com/rust-lang/rust/pull/90076
+        // type Iter<'iter> = std::slice::Iter<'iter, T>
+        // where
+        //     T: 'iter,
+        //     Self: 'iter;
         type Family = VecFamily;
         type Sibling<U> = <<Self as Collection<T>>::Family as CollectionFamily>::Member<U>;
 
@@ -32,9 +32,10 @@ pub mod collections {
             self.push(value)
         }
 
-        fn iterate<'iter>(&'iter self) -> Self::Iter<'iter> {
-            self.iter()
-        }
+        // TODO: handle where clause in GAT: https://github.com/rust-lang/rust/pull/90076
+        // fn iterate<'iter>(&'iter self) -> Self::Iter<'iter> {
+        //     self.iter()
+        // }
     }
 }
 
