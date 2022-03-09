@@ -31,7 +31,7 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.2.8] - 2021-06-23
 
-**Note: This release has been yanked because of regression which fixed in 0.2.9.**
+**Note:** This release has been yanked because of regression which fixed in 0.2.9.
 
 - [Support specifying visibility directly on `impl`.](https://github.com/taiki-e/easy-ext/pull/31)
 
@@ -130,13 +130,13 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.1.1] - 2019-02-21
 
-**Note: This release has been yanked.**
+**Note:** This release has been yanked.
 
 - Fixed an error related to generics.
 
 ## [0.1.0] - 2019-02-20
 
-**Note: This release has been yanked.**
+**Note:** This release has been yanked.
 
 Initial release
 

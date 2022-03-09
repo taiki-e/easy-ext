@@ -6,7 +6,7 @@ use crate::to_tokens::ToTokens;
 
 macro_rules! format_err {
     ($span:expr, $msg:expr $(,)*) => {
-        crate::Error::new(&$span, String::from($msg))
+        crate::error::Error::new(&$span, String::from($msg))
     };
     ($span:expr, $($tt:tt)*) => {
         format_err!($span, format!($($tt)*))
