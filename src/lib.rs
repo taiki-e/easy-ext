@@ -181,6 +181,7 @@
 // It cannot be included in the published code because these lints have false positives in the minimum required version.
 #![cfg_attr(test, warn(single_use_lifetimes))]
 #![warn(clippy::default_trait_access, clippy::wildcard_imports)]
+#![allow(clippy::derive_partial_eq_without_eq)]
 
 // older compilers require explicit `extern crate`.
 #[allow(unused_extern_crates)]
