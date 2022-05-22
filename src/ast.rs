@@ -159,8 +159,6 @@ impl Attribute {
 pub(crate) enum Visibility {
     // `pub`.
     Public(Ident),
-    // `crate`.
-    Crate(Ident),
     //`pub(self)`, `pub(super)`, `pub(crate)`, or `pub(in some::module)`
     Restricted(Ident, Group),
     Inherited,
@@ -179,7 +177,6 @@ impl PartialEq for Visibility {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
             (Visibility::Public(_), Visibility::Public(_))
-            | (Visibility::Crate(_), Visibility::Crate(_))
             | (Visibility::Inherited, Visibility::Inherited) => true,
             (Visibility::Restricted(_, x), Visibility::Restricted(_, y)) => {
                 x.stream().to_string() == y.stream().to_string()
@@ -193,7 +190,6 @@ impl fmt::Display for Visibility {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Visibility::Public(_) => f.write_str("pub"),
-            Visibility::Crate(_) => f.write_str("crate"),
             Visibility::Inherited => Ok(()),
             Visibility::Restricted(_, g) => write!(f, "pub{}", g),
         }
@@ -747,14 +743,6 @@ pub(crate) mod parsing {
                 }
                 _ => Ok(Visibility::Public(pub_token)),
             }
-        } else if input.peek_t(&"crate") {
-            if input.peek2_punct(':').map_or(false, |p| p.spacing() == Spacing::Joint)
-                && input.peek3_t(&':')
-            {
-                Ok(Visibility::Inherited)
-            } else {
-                Ok(Visibility::Crate(input.parse_ident()?))
-            }
         } else {
             Ok(Visibility::Inherited)
         }
@@ -1244,7 +1232,7 @@ pub(crate) mod printing {
     impl ToTokens for Visibility {
         fn to_tokens(&self, tokens: &mut TokenStream) {
             match self {
-                Visibility::Crate(i) | Visibility::Public(i) => i.to_tokens(tokens),
+                Visibility::Public(i) => i.to_tokens(tokens),
                 Visibility::Restricted(i, g) => {
                     i.to_tokens(tokens);
                     g.to_tokens(tokens);
