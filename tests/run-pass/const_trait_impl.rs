@@ -1,7 +1,7 @@
 #![feature(const_trait_impl)]
 
 // https://github.com/rust-lang/rust/issues/67792
-// https://github.com/rust-lang/rust/blob/49920bc581743d6edb9f82fbff4cbafebc212619/src/test/ui/rfc-2632-const-trait-impl/call-const-trait-method-pass.rs
+// https://github.com/rust-lang/rust/blob/1.61.0/src/test/ui/rfc-2632-const-trait-impl/call-const-trait-method-pass.rs
 
 use easy_ext::ext;
 
