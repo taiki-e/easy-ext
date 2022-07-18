@@ -1,6 +1,6 @@
 #![feature(generic_associated_types)]
 
-// https://github.com/rust-lang/rust/blob/1.61.0/src/test/ui/generic-associated-types/collections.rs
+// https://github.com/rust-lang/rust/blob/1.62.0/src/test/ui/generic-associated-types/collections.rs
 pub mod collections {
     use easy_ext::ext;
 

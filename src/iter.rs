@@ -244,7 +244,7 @@ impl TokenIter {
     }
 }
 
-// Based on https://github.com/dtolnay/proc-macro-hack/blob/0.5.18/src/iter.rs
+// Based on https://github.com/dtolnay/proc-macro-hack/blob/0.5.19/src/iter.rs
 impl Iterator for TokenIter {
     type Item = TokenTree;
 

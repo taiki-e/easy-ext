@@ -475,7 +475,7 @@ fn min_const_generics() {
 
 #[test]
 fn const_generics_defaults() {
-    // https://github.com/rust-lang/rust/tree/1.61.0/src/test/ui/const-generics/defaults
+    // https://github.com/rust-lang/rust/tree/1.62.0/src/test/ui/const-generics/defaults
 
     #[ext(Ext)]
     impl<const N: usize = 3> () {}
@@ -487,7 +487,7 @@ fn const_generics_defaults() {
     impl<const N: usize> Trait<N> for () {}
     impl Trait for u8 {}
 
-    // https://github.com/rust-lang/rust/blob/1.61.0/src/test/ui/const-generics/defaults/const-param-as-default-value.rs
+    // https://github.com/rust-lang/rust/blob/1.62.0/src/test/ui/const-generics/defaults/const-param-as-default-value.rs
     #[ext(Ext2)]
     impl<const N: usize, const M: usize = N> () {}
 }

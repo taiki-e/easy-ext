@@ -2,7 +2,7 @@
 
 // See also run-pass/specialization.rs.
 
-// https://github.com/rust-lang/rust/blob/1.61.0/src/test/ui/specialization/min_specialization/implcit-well-formed-bounds.rs
+// https://github.com/rust-lang/rust/blob/1.62.0/src/test/ui/specialization/min_specialization/implcit-well-formed-bounds.rs
 pub mod implcit_well_formed_bounds {
     use easy_ext::ext;
 
@@ -26,7 +26,7 @@ pub mod implcit_well_formed_bounds {
     }
 }
 
-// https://github.com/rust-lang/rust/blob/1.61.0/src/test/ui/specialization/min_specialization/spec-iter.rs
+// https://github.com/rust-lang/rust/blob/1.62.0/src/test/ui/specialization/min_specialization/spec-iter.rs
 pub mod spec_iter {
     use easy_ext::ext;
 
@@ -41,7 +41,7 @@ pub mod spec_iter {
     }
 }
 
-// https://github.com/rust-lang/rust/blob/1.61.0/src/test/ui/specialization/min_specialization/spec-reference.rs
+// https://github.com/rust-lang/rust/blob/1.62.0/src/test/ui/specialization/min_specialization/spec-reference.rs
 pub mod spec_reference {
     use easy_ext::ext;
 
