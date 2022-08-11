@@ -1,6 +1,6 @@
 #![feature(associated_type_bounds)]
 
-// https://github.com/rust-lang/rust/blob/1.62.0/src/test/ui/associated-type-bounds/fn-where.rs
+// https://github.com/rust-lang/rust/blob/1.63.0/src/test/ui/associated-type-bounds/fn-where.rs
 pub mod fn_where {
     use easy_ext::ext;
 
@@ -66,7 +66,7 @@ pub mod fn_where {
     }
 }
 
-// https://github.com/rust-lang/rust/blob/1.62.0/src/test/ui/associated-type-bounds/auxiliary/fn-aux.rs
+// https://github.com/rust-lang/rust/blob/1.63.0/src/test/ui/associated-type-bounds/auxiliary/fn-aux.rs
 mod fn_aux {
     // Traits:
 
