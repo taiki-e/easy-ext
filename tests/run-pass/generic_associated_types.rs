@@ -1,4 +1,4 @@
-#![feature(generic_associated_types)]
+// TODO: move to tests/test.rs once Rust 1.65 become stable.
 
 // https://github.com/rust-lang/rust/blob/1.63.0/src/test/ui/generic-associated-types/collections.rs
 pub mod collections {
