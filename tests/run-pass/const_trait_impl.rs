@@ -1,5 +1,8 @@
 #![feature(const_trait_impl)]
 
+/*
+TODO: update for https://github.com/rust-lang/rust/pull/100982
+
 // https://github.com/rust-lang/rust/issues/67792
 // https://github.com/rust-lang/rust/blob/1.63.0/src/test/ui/rfc-2632-const-trait-impl/call-const-trait-method-pass.rs
 
@@ -17,5 +20,6 @@ pub const fn add_i32(a: i32, b: i32) -> i32 {
 }
 
 const ADD_I32: i32 = 1i32.plus(2i32);
+*/
 
 fn main() {}
