@@ -758,7 +758,6 @@ pub(crate) mod parsing {
     pub(crate) fn parse_inputs(input: TokenStream) -> Result<Vec<FnArg>> {
         let input = &mut TokenIter::new(input);
         let mut inputs = vec![];
-        // TODO
 
         loop {
             let mut pat = vec![];
