@@ -583,3 +583,14 @@ pub mod visibility {
         }
     }
 }
+
+#[test]
+fn arg_pat() {
+    #[ext]
+    impl str {
+        fn f((x, y): (u8, u8)) {
+            let _x = x;
+            let _y = y;
+        }
+    }
+}

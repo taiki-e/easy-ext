@@ -255,8 +255,15 @@ pub(crate) struct Signature {
     pub(crate) before_ident: Vec<TokenTree>,
     pub(crate) ident: Ident,
     pub(crate) generics: Generics,
-    pub(crate) inputs: TokenStream,
+    pub(crate) paren_token: Span,
+    pub(crate) inputs: Vec<FnArg>,
     pub(crate) output: Option<TokenStream>,
+}
+
+#[derive(Clone)]
+pub(crate) enum FnArg {
+    Receiver(TokenStream, Option<TokenTree>),
+    Typed(TokenStream, Punct, TokenStream, Option<TokenTree>),
 }
 
 pub(crate) struct ItemTrait {
@@ -305,8 +312,8 @@ pub(crate) mod parsing {
     use proc_macro::{Delimiter, Punct, Spacing, TokenStream, TokenTree};
 
     use super::{
-        Attribute, AttributeKind, BoundLifetimes, ConstParam, GenericParam, Generics, ImplItem,
-        ImplItemConst, ImplItemMethod, ImplItemType, ItemImpl, Lifetime, LifetimeDef,
+        Attribute, AttributeKind, BoundLifetimes, ConstParam, FnArg, GenericParam, Generics,
+        ImplItem, ImplItemConst, ImplItemMethod, ImplItemType, ItemImpl, Lifetime, LifetimeDef,
         PredicateLifetime, PredicateType, Signature, TypeParam, TypeParamBound, Visibility,
         WhereClause, WherePredicate,
     };
@@ -748,6 +755,59 @@ pub(crate) mod parsing {
         }
     }
 
+    pub(crate) fn parse_inputs(input: TokenStream) -> Result<Vec<FnArg>> {
+        let input = &mut TokenIter::new(input);
+        let mut inputs = vec![];
+        // TODO
+
+        loop {
+            let mut pat = vec![];
+            append_tokens_until(input, &mut pat, false, |next| match next {
+                Some(TokenTree::Punct(p)) if p.as_char() == ',' || p.as_char() == ':' => true,
+                None => true,
+                _ => false,
+            })?;
+            if !input.peek_t(&':') {
+                if input.peek_t(&',') {
+                    inputs.push(FnArg::Receiver(
+                        pat.into_iter().collect(),
+                        Some(input.next().unwrap()),
+                    ));
+                    continue;
+                }
+                assert!(input.next().is_none());
+                inputs.push(FnArg::Receiver(pat.into_iter().collect(), None));
+                break;
+            }
+            let colon = input.parse_punct(':')?;
+            let mut ty = vec![];
+            append_tokens_until(input, &mut ty, false, |next| match next {
+                Some(TokenTree::Punct(p)) if p.as_char() == ',' => true,
+                None => true,
+                _ => false,
+            })?;
+            if input.peek_t(&',') {
+                inputs.push(FnArg::Typed(
+                    pat.into_iter().collect(),
+                    colon,
+                    ty.into_iter().collect(),
+                    Some(input.next().unwrap()),
+                ));
+                continue;
+            }
+            assert!(input.next().is_none());
+            inputs.push(FnArg::Typed(
+                pat.into_iter().collect(),
+                colon,
+                ty.into_iter().collect(),
+                None,
+            ));
+            break;
+        }
+
+        Ok(inputs)
+    }
+
     pub(crate) fn parse_impl(input: &mut TokenIter) -> Result<ItemImpl> {
         let attrs = parse_attrs(input)?;
         let vis: Visibility = parse_visibility(input)?;
@@ -922,7 +982,8 @@ pub(crate) mod parsing {
         let mut generics = parse_generics(input)?;
 
         let inputs = input.parse_group(Delimiter::Parenthesis)?;
-        let inputs = Some(TokenTree::Group(inputs)).into_iter().collect();
+        let paren_token = inputs.span();
+        let inputs = parse_inputs(inputs.stream())?;
 
         let output = if input.peek_punct('-').map_or(false, |p| p.spacing() == Spacing::Joint)
             && input.peek2_t(&'>')
@@ -945,7 +1006,7 @@ pub(crate) mod parsing {
             generics.where_clause = Some(parse_where_clause(input)?);
         }
 
-        Ok(Signature { before_ident, ident, generics, inputs, output })
+        Ok(Signature { before_ident, ident, generics, paren_token, inputs, output })
     }
 }
 
@@ -953,11 +1014,11 @@ pub(crate) mod printing {
     use proc_macro::{Delimiter, Group, Punct, Spacing, Span, TokenStream};
 
     use super::{
-        Attribute, BoundLifetimes, ConstParam, GenericParam, Generics, ImplGenerics, ImplItem,
-        ImplItemConst, ImplItemMethod, ImplItemType, ItemImpl, ItemTrait, Lifetime, LifetimeDef,
-        PredicateLifetime, PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod,
-        TraitItemType, TypeGenerics, TypeParam, TypeParamBound, Visibility, WhereClause,
-        WherePredicate,
+        Attribute, BoundLifetimes, ConstParam, FnArg, GenericParam, Generics, ImplGenerics,
+        ImplItem, ImplItemConst, ImplItemMethod, ImplItemType, ItemImpl, ItemTrait, Lifetime,
+        LifetimeDef, PredicateLifetime, PredicateType, Signature, TraitItem, TraitItemConst,
+        TraitItemMethod, TraitItemType, TypeGenerics, TypeParam, TypeParamBound, Visibility,
+        WhereClause, WherePredicate,
     };
     use crate::to_tokens::ToTokens;
 
@@ -1249,10 +1310,15 @@ pub(crate) mod printing {
         }
     }
 
-    fn brace(span: Span, tokens: &mut TokenStream, f: &dyn Fn(&mut TokenStream)) {
+    fn group(
+        span: Span,
+        delimiter: Delimiter,
+        tokens: &mut TokenStream,
+        f: &dyn Fn(&mut TokenStream),
+    ) {
         let mut inner = TokenStream::new();
         f(&mut inner);
-        let mut g = Group::new(Delimiter::Brace, inner);
+        let mut g = Group::new(delimiter, inner);
         g.set_span(span);
         g.to_tokens(tokens);
     }
@@ -1266,7 +1332,7 @@ pub(crate) mod printing {
             self.ident.to_tokens(tokens);
             self.generics.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
-            brace(self.brace_token, tokens, &|tokens| {
+            group(self.brace_token, Delimiter::Brace, tokens, &|tokens| {
                 self.items.to_tokens(tokens);
             });
         }
@@ -1287,7 +1353,7 @@ pub(crate) mod printing {
             }
             self.self_ty.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
-            brace(self.brace_token, tokens, &|tokens| {
+            group(self.brace_token, Delimiter::Brace, tokens, &|tokens| {
                 self.items.to_tokens(tokens);
             });
         }
@@ -1388,9 +1454,30 @@ pub(crate) mod printing {
             self.before_ident.to_tokens(tokens);
             self.ident.to_tokens(tokens);
             self.generics.to_tokens(tokens);
-            self.inputs.to_tokens(tokens);
+            group(self.paren_token, Delimiter::Parenthesis, tokens, &|tokens| {
+                for arg in &self.inputs {
+                    arg.to_tokens(tokens);
+                }
+            });
             self.output.to_tokens(tokens);
             self.generics.where_clause.to_tokens(tokens);
+        }
+    }
+
+    impl ToTokens for FnArg {
+        fn to_tokens(&self, tokens: &mut TokenStream) {
+            match self {
+                FnArg::Receiver(pat, p) => {
+                    pat.to_tokens(tokens);
+                    p.to_tokens(tokens);
+                }
+                FnArg::Typed(pat, colon, ty, p) => {
+                    pat.to_tokens(tokens);
+                    colon.to_tokens(tokens);
+                    ty.to_tokens(tokens);
+                    p.to_tokens(tokens);
+                }
+            }
         }
     }
 }

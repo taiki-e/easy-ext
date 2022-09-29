@@ -205,9 +205,9 @@ use proc_macro::{Delimiter, Group, Ident, Span, TokenStream, TokenTree};
 
 use crate::{
     ast::{
-        parsing, printing::punct, Attribute, AttributeKind, GenericParam, Generics, ImplItem,
-        ItemImpl, ItemTrait, PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod,
-        TraitItemType, TypeParam, Visibility, WherePredicate,
+        parsing, printing::punct, Attribute, AttributeKind, FnArg, GenericParam, Generics,
+        ImplItem, ItemImpl, ItemTrait, PredicateType, Signature, TraitItem, TraitItemConst,
+        TraitItemMethod, TraitItemType, TypeParam, Visibility, WherePredicate,
     },
     error::{Error, Result},
     iter::TokenIter,
@@ -361,9 +361,23 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
 
         fn visit_signature_mut(&mut self, node: &mut Signature) {
             self.visit_generics_mut(&mut node.generics);
-            self.visit_token_stream(&mut node.inputs);
+            for arg in &mut node.inputs {
+                self.visit_fn_arg_mut(arg);
+            }
             if let Some(ty) = &mut node.output {
                 self.visit_token_stream(ty);
+            }
+        }
+
+        fn visit_fn_arg_mut(&mut self, node: &mut FnArg) {
+            match node {
+                FnArg::Receiver(pat, _) => {
+                    self.visit_token_stream(pat);
+                }
+                FnArg::Typed(pat, _, ty, _) => {
+                    self.visit_token_stream(pat);
+                    self.visit_token_stream(ty);
+                }
             }
         }
 
@@ -545,7 +559,20 @@ fn trait_item_from_impl_item(
             find_remove(&mut attrs, AttributeKind::Inline); // `#[inline]` is ignored on function prototypes
             Ok(TraitItem::Method(TraitItemMethod {
                 attrs,
-                sig: impl_method.sig.clone(),
+                sig: {
+                    let mut sig = impl_method.sig.clone();
+                    for arg in &mut sig.inputs {
+                        if let FnArg::Typed(pat, ..) = arg {
+                            *pat = Some(TokenTree::Ident(Ident::new(
+                                "_",
+                                pat.clone().into_iter().next().unwrap().span(),
+                            )))
+                            .into_iter()
+                            .collect();
+                        }
+                    }
+                    sig
+                },
                 semi_token: punct(';', impl_method.body.span()),
             }))
         }

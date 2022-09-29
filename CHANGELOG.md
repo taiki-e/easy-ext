@@ -10,6 +10,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Fix "patterns aren't allowed in functions without bodies" error when patterns are used in arguments.
+
 ## [1.0.0] - 2021-08-24
 
 - [Remove deprecated old impl-level visibility syntax (`#[ext(pub)]`).](https://github.com/taiki-e/easy-ext/pull/38)
