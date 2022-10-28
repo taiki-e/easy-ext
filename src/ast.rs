@@ -948,7 +948,7 @@ pub(crate) mod parsing {
         fork.parse_kw_opt("async");
         fork.parse_kw_opt("unsafe");
         if fork.peek_t(&"extern") {
-            fork.parse_kw("extern").ok();
+            let _extern_token = fork.parse_kw("extern");
             fork.parse_literal_opt();
         }
         fork.peek_t(&"fn")
