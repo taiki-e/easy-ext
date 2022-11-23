@@ -318,6 +318,7 @@ fn assoc_ty() {
     assert_eq!(iter.try_next(), Ok(None));
 }
 
+#[allow(clippy::let_underscore_future)]
 #[test]
 fn syntax() {
     #[ext(E1)]
