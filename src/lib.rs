@@ -467,9 +467,11 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
         TokenTree::Ident(Ident::new("allow", Span::call_site())),
         TokenTree::Group(Group::new(
             Delimiter::Parenthesis,
-            Some(TokenTree::Ident(Ident::new("patterns_in_fns_without_body", Span::call_site())))
-                .into_iter()
-                .collect(),
+            std::iter::once(TokenTree::Ident(Ident::new(
+                "patterns_in_fns_without_body",
+                Span::call_site(),
+            )))
+            .collect(),
         )),
     ])); // mut self
 
@@ -563,11 +565,10 @@ fn trait_item_from_impl_item(
                     let mut sig = impl_method.sig.clone();
                     for arg in &mut sig.inputs {
                         if let FnArg::Typed(pat, ..) = arg {
-                            *pat = Some(TokenTree::Ident(Ident::new(
+                            *pat = std::iter::once(TokenTree::Ident(Ident::new(
                                 "_",
                                 pat.clone().into_iter().next().unwrap().span(),
                             )))
-                            .into_iter()
                             .collect();
                         }
                     }

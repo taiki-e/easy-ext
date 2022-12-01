@@ -605,7 +605,7 @@ pub(crate) mod parsing {
         let mut default = None;
         let eq_token = if input.peek_t(&'=') {
             let eq_token = input.parse_punct('=')?;
-            default = Some(Some(const_argument(input)?).into_iter().collect());
+            default = Some(std::iter::once(const_argument(input)?).collect());
             Some(eq_token)
         } else {
             None
