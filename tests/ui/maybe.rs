@@ -19,8 +19,9 @@ where
 #[ext(E3)]
 impl<T> T
 where
-    Self: ?Sized, //~ ERROR `?Trait` bounds are only permitted at the point where a type parameter is declared
+    Self: ?Sized,
 {
+    //~^^ ERROR `?Trait` bounds are only permitted at the point where a type parameter is declared
     fn f(&self) {}
 }
 
@@ -39,8 +40,9 @@ trait T2 {
 }
 impl<T> T2 for T
 where
-    Self: ?Sized, //~ ERROR `?Trait` bounds are only permitted at the point where a type parameter is declared
+    Self: ?Sized,
 {
+    //~^^ ERROR `?Trait` bounds are only permitted at the point where a type parameter is declared
     fn f(&self) {}
 }
 
@@ -68,8 +70,9 @@ trait T5 {
 impl<T> T5 for T {
     fn f(&self)
     where
-        T: ?Sized, //~ ERROR `?Trait` bounds are only permitted at the point where a type parameter is declared
+        T: ?Sized,
     {
+        //~^^ ERROR `?Trait` bounds are only permitted at the point where a type parameter is declared
     }
 }
 
