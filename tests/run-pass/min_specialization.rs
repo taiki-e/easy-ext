@@ -3,7 +3,7 @@
 // See also run-pass/specialization.rs.
 
 // https://github.com/rust-lang/rust/blob/1.63.0/src/test/ui/specialization/min_specialization/implcit-well-formed-bounds.rs
-pub mod implcit_well_formed_bounds {
+pub mod implicit_well_formed_bounds {
     use easy_ext::ext;
 
     struct OrdOnly<T: Ord>(T);
