@@ -1,6 +1,5 @@
 asyncness
 defaultness
 subtrait
-supertraits
 desugared
 forall
