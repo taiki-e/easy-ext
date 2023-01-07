@@ -8,7 +8,7 @@ easy-ext = "1"
 
 *Compiler support: requires rustc 1.31+*
 
-# Examples
+## Examples
 
 ```rust
 use easy_ext::ext;
@@ -62,11 +62,11 @@ impl<T, E> Result<T, E> {
 Note that in this case, `#[ext]` assigns a random name, so you cannot
 import/export the generated trait.
 
-## Visibility
+### Visibility
 
 There are two ways to specify visibility.
 
-### Impl-level visibility
+#### Impl-level visibility
 
 The first way is to specify visibility at the impl level. For example:
 
@@ -86,7 +86,7 @@ pub impl str {
 }
 ```
 
-### Associated-item-level visibility
+#### Associated-item-level visibility
 
 Another way is to specify visibility at the associated item level.
 
@@ -112,7 +112,7 @@ Note that the visibility of all the associated items in the `impl` must be ident
 
 Note that you cannot specify impl-level visibility and associated-item-level visibility at the same time.
 
-## [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
+### [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
 
 If you want the extension trait to be a subtrait of another trait,
 add `Self: SubTrait` bound to the `where` clause.
@@ -129,9 +129,9 @@ where
 }
 ```
 
-## Supported items
+### Supported items
 
-### [Associated functions (methods)](https://doc.rust-lang.org/reference/items/associated-items.html#associated-functions-and-methods)
+#### [Associated functions (methods)](https://doc.rust-lang.org/reference/items/associated-items.html#associated-functions-and-methods)
 
 ```rust
 use easy_ext::ext;
@@ -142,7 +142,7 @@ impl<T> T {
 }
 ```
 
-### [Associated constants](https://doc.rust-lang.org/reference/items/associated-items.html#associated-constants)
+#### [Associated constants](https://doc.rust-lang.org/reference/items/associated-items.html#associated-constants)
 
 ```rust
 use easy_ext::ext;
@@ -153,7 +153,7 @@ impl<T> T {
 }
 ```
 
-### [Associated types](https://doc.rust-lang.org/reference/items/associated-items.html#associated-types)
+#### [Associated types](https://doc.rust-lang.org/reference/items/associated-items.html#associated-types)
 
 ```rust
 use easy_ext::ext;
