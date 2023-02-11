@@ -1,5 +1,5 @@
 #![warn(rust_2018_idioms, single_use_lifetimes)]
-#![allow(clippy::missing_safety_doc)]
+#![allow(clippy::missing_safety_doc, clippy::extra_unused_type_parameters)]
 
 use async_trait::async_trait;
 use easy_ext::ext;
