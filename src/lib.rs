@@ -183,12 +183,7 @@ impl str {
 // It cannot be included in the published code because these lints have false positives in the minimum required version.
 #![cfg_attr(test, warn(single_use_lifetimes))]
 #![warn(clippy::pedantic)]
-#![allow(
-    clippy::cast_lossless,
-    clippy::derive_partial_eq_without_eq,
-    clippy::similar_names,
-    clippy::too_many_lines
-)]
+#![allow(clippy::cast_lossless, clippy::similar_names, clippy::too_many_lines)]
 
 // older compilers require explicit `extern crate`.
 #[allow(unused_extern_crates)]
