@@ -522,7 +522,7 @@ fn generic_associated_types() {
         }
 
         fn add(&mut self, value: T) {
-            self.push(value)
+            self.push(value);
         }
 
         // TODO: handle where clause in GAT: https://github.com/rust-lang/rust/pull/90076
