@@ -6,6 +6,7 @@
 [![rustc](https://img.shields.io/badge/rustc-1.31+-blue?style=flat-square&logo=rust)](https://www.rust-lang.org)
 [![build status](https://img.shields.io/github/actions/workflow/status/taiki-e/easy-ext/ci.yml?branch=main&style=flat-square&logo=github)](https://github.com/taiki-e/easy-ext/actions)
 
+<!-- tidy:crate-doc:start -->
 An attribute macro for easily writing [extension trait pattern][rfc0445].
 
 ```toml
@@ -176,6 +177,8 @@ impl str {
 ```
 
 [rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
+
+<!-- tidy:crate-doc:end -->
 
 ## License
 

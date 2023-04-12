@@ -1,4 +1,5 @@
 /*!
+<!-- tidy:crate-doc:start -->
 An attribute macro for easily writing [extension trait pattern][rfc0445].
 
 ```toml
@@ -169,6 +170,8 @@ impl str {
 ```
 
 [rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
+
+<!-- tidy:crate-doc:end -->
 */
 
 #![doc(test(

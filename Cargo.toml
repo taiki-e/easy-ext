@@ -16,7 +16,6 @@ An attribute macro for easily writing extension trait pattern.
 targets = ["x86_64-unknown-linux-gnu"]
 
 [workspace]
-members = ["tests/doc"]
 
 [lib]
 proc-macro = true
