@@ -1,6 +1,6 @@
 /*!
 <!-- tidy:crate-doc:start -->
-An attribute macro for easily writing [extension trait pattern][rfc0445].
+A lightweight attribute macro for easily writing [extension trait pattern][rfc0445].
 
 ```toml
 [dependencies]
@@ -214,7 +214,7 @@ use crate::{
     to_tokens::ToTokens,
 };
 
-/// An attribute macro for easily writing [extension trait pattern][rfc0445].
+/// A lightweight attribute macro for easily writing [extension trait pattern][rfc0445].
 ///
 /// See crate level documentation for details.
 ///

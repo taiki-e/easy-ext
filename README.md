@@ -7,7 +7,7 @@
 [![build status](https://img.shields.io/github/actions/workflow/status/taiki-e/easy-ext/ci.yml?branch=main&style=flat-square&logo=github)](https://github.com/taiki-e/easy-ext/actions)
 
 <!-- tidy:crate-doc:start -->
-An attribute macro for easily writing [extension trait pattern][rfc0445].
+A lightweight attribute macro for easily writing [extension trait pattern][rfc0445].
 
 ```toml
 [dependencies]

@@ -9,7 +9,7 @@ keywords = ["extension", "trait", "macros", "attribute"]
 categories = ["no-std", "rust-patterns"]
 exclude = ["/.*", "/tools"]
 description = """
-An attribute macro for easily writing extension trait pattern.
+A lightweight attribute macro for easily writing extension trait pattern.
 """
 
 [package.metadata.docs.rs]
