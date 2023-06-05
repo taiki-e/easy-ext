@@ -476,7 +476,7 @@ fn min_const_generics() {
 
 #[test]
 fn const_generics_defaults() {
-    // https://github.com/rust-lang/rust/tree/1.67.0/src/test/ui/const-generics/defaults
+    // https://github.com/rust-lang/rust/tree/1.70.0/tests/ui/const-generics/defaults
 
     #[ext(Ext)]
     impl<const N: usize = 3> () {}
@@ -488,14 +488,14 @@ fn const_generics_defaults() {
     impl<const N: usize> Trait<N> for () {}
     impl Trait for u8 {}
 
-    // https://github.com/rust-lang/rust/blob/1.67.0/src/test/ui/const-generics/defaults/const-param-as-default-value.rs
+    // https://github.com/rust-lang/rust/blob/1.70.0/tests/ui/const-generics/defaults/const-param-as-default-value.rs
     #[ext(Ext2)]
     impl<const N: usize, const M: usize = N> () {}
 }
 
 #[test]
 fn generic_associated_types() {
-    // https://github.com/rust-lang/rust/blob/1.67.0/src/test/ui/generic-associated-types/collections.rs
+    // https://github.com/rust-lang/rust/blob/1.70.0/tests/ui/generic-associated-types/collections.rs
 
     trait CollectionFamily {
         type Member<T>: Collection<T, Family = Self>;
