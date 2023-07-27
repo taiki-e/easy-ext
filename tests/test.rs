@@ -576,6 +576,7 @@ fn where_clause() {
     }
 }
 
+#[allow(clippy::needless_pub_self)] // This is intentional
 pub mod visibility {
     use easy_ext::ext;
 
