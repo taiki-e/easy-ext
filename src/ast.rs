@@ -942,7 +942,7 @@ pub(crate) mod parsing {
         }
     }
 
-    fn peek_signature(input: &mut TokenIter) -> bool {
+    fn peek_signature(input: &TokenIter) -> bool {
         let fork = &mut input.clone();
         fork.parse_kw_opt("const");
         fork.parse_kw_opt("async");
