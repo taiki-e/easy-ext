@@ -6,15 +6,17 @@ taiki
 
 // tool name and its configs or options
 asan
+cdylib
 cflags
 clippy
 codegen
 cxxflags
+dylib
 exitcode
 miri
 miriflags
 msan
-retag
+rlib
 rustc
 rustdoc
 rustdocflags
@@ -22,12 +24,13 @@ rustflags
 rustfmt
 rustsec
 rustup
+staticlib
+tsan
 valgrind
 xcompile
-Zdoctest
 Zmiri
 
-// Rust target triple
+// Rust target triple/spec
 aarch
 amdgpu
 androideabi
@@ -54,6 +57,7 @@ gnuspe
 gnux
 illumos
 imac
+libnx
 loongarch
 macabi
 mipsel
@@ -62,14 +66,17 @@ msvc
 muslabi
 musleabi
 musleabihf
+newlib
 newlibeabihf
 nvptx
 ohos
 openwrt
+relibc
 riscv
 softfloat
 sparcv
 spirv
+teeos
 thumbeb
 thumbebv
 thumbv
@@ -152,12 +159,14 @@ endianness
 esac
 euxo
 gsub
+libc
 moreutils
 msys
 noninteractive
 noprofile
 norc
 nproc
+objcopy
 objdump
 pipefail
 powerset
