@@ -65,7 +65,8 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
       - uses: taiki-e/install-action@cargo-minimal-versions
       - run: cargo test --workspace --all-features
-      - run: cargo minimal-versions build --workspace --all-features --ignore-private
+      - run: cargo hack build --workspace --no-private --feature-powerset --no-dev-deps
+      - run: cargo minimal-versions build --workspace --no-private --all-features
 
   miri:
     runs-on: ubuntu-latest
