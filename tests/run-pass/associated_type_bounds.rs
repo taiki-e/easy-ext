@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 #![feature(associated_type_bounds)]
 #![allow(dead_code)]
 

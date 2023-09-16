@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 #![feature(impl_trait_in_assoc_type)]
 
 use easy_ext::ext;

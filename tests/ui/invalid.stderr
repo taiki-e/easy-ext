@@ -1,65 +1,65 @@
 error: expected `=`
- --> tests/ui/invalid.rs:6:24
+ --> tests/ui/invalid.rs:8:24
   |
-6 |         const ASSOC: u8; //~ ERROR expected `=`
+8 |         const ASSOC: u8; //~ ERROR expected `=`
   |                        ^
 
 error: expected `=`
-  --> tests/ui/invalid.rs:10:19
+  --> tests/ui/invalid.rs:12:19
    |
-10 |         type Assoc; //~ ERROR expected `=`
+12 |         type Assoc; //~ ERROR expected `=`
    |                   ^
 
 error: expected `{`
-  --> tests/ui/invalid.rs:14:19
+  --> tests/ui/invalid.rs:16:19
    |
-14 |         fn assoc(); //~ ERROR expected `{`
+16 |         fn assoc(); //~ ERROR expected `{`
    |                   ^
 
 error: expected one of: `default`, `fn`, `const`, `type`
-  --> tests/ui/invalid.rs:19:9
+  --> tests/ui/invalid.rs:21:9
    |
-19 |         mac!(); //~ ERROR expected one of: `default`, `fn`, `const`, `type`
+21 |         mac!(); //~ ERROR expected one of: `default`, `fn`, `const`, `type`
    |         ^^^
 
 error: unexpected token: `,`
-  --> tests/ui/invalid.rs:23:19
+  --> tests/ui/invalid.rs:25:19
    |
-23 |     #[ext(ExtraArg,)] //~ ERROR unexpected token
+25 |     #[ext(ExtraArg,)] //~ ERROR unexpected token
    |                   ^
 
 error: use `pub impl` instead
-  --> tests/ui/invalid.rs:26:11
+  --> tests/ui/invalid.rs:28:11
    |
-26 |     #[ext(pub OldVisSyntax1)] //~ ERROR use `pub impl` instead
+28 |     #[ext(pub OldVisSyntax1)] //~ ERROR use `pub impl` instead
    |           ^^^
 
 error: use `pub(crate) impl` instead
-  --> tests/ui/invalid.rs:29:11
+  --> tests/ui/invalid.rs:31:11
    |
-29 |     #[ext(pub(crate) OldVisSyntax2)] //~ ERROR use `pub(crate) impl` instead
+31 |     #[ext(pub(crate) OldVisSyntax2)] //~ ERROR use `pub(crate) impl` instead
    |           ^^^^^^^^^^
 
 error: all associated items must have a visibility of `pub`
-  --> tests/ui/invalid.rs:39:15
+  --> tests/ui/invalid.rs:41:15
    |
-39 |         const ASSOC2: u8 = 2; //~ ERROR all associated items must have a visibility of `pub`
+41 |         const ASSOC2: u8 = 2; //~ ERROR all associated items must have a visibility of `pub`
    |               ^^^^^^
 
 error: all associated items must have inherited visibility
-  --> tests/ui/invalid.rs:46:9
+  --> tests/ui/invalid.rs:48:9
    |
-46 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+48 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
    |         ^^^
 
 error: all associated items must have a visibility of `pub(crate)`
-  --> tests/ui/invalid.rs:52:9
+  --> tests/ui/invalid.rs:54:9
    |
-52 |         pub type Assoc2 = (); //~ ERROR all associated items must have a visibility of `pub(crate)`
+54 |         pub type Assoc2 = (); //~ ERROR all associated items must have a visibility of `pub(crate)`
    |         ^^^
 
 error: all associated items must have inherited visibility
-  --> tests/ui/invalid.rs:59:9
+  --> tests/ui/invalid.rs:61:9
    |
-59 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
+61 |         pub fn assoc2(&self) {} //~ ERROR all associated items must have inherited visibility
    |         ^^^

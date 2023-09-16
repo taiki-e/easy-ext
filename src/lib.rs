@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 /*!
 <!-- tidy:crate-doc:start -->
 A lightweight attribute macro for easily writing [extension trait pattern][rfc0445].

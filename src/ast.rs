@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 // Based on:
 // - https://github.com/dtolnay/syn/blob/1.0.70/src/item.rs
 // - https://github.com/dtolnay/syn/blob/1.0.70/src/generics.rs

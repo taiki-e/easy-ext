@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 #![allow(incomplete_features)]
 #![feature(specialization)]
 

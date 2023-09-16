@@ -1,23 +1,23 @@
 error: `?Trait` bounds are only permitted at the point where a type parameter is declared
-  --> tests/ui/maybe.rs:32:11
+  --> tests/ui/maybe.rs:34:11
    |
-32 |     Self: ?Sized,
+34 |     Self: ?Sized,
    |           ^^^^^^
 
 error: `?Trait` bounds are only permitted at the point where a type parameter is declared
-  --> tests/ui/maybe.rs:43:11
+  --> tests/ui/maybe.rs:45:11
    |
-43 |     Self: ?Sized,
+45 |     Self: ?Sized,
    |           ^^^^^^
 
 error: `?Trait` bounds are only permitted at the point where a type parameter is declared
-  --> tests/ui/maybe.rs:73:12
+  --> tests/ui/maybe.rs:75:12
    |
-73 |         T: ?Sized,
+75 |         T: ?Sized,
    |            ^^^^^^
 
 error: `?Trait` bounds are only permitted at the point where a type parameter is declared
-  --> tests/ui/maybe.rs:22:11
+  --> tests/ui/maybe.rs:24:11
    |
-22 |     Self: ?Sized,
+24 |     Self: ?Sized,
    |           ^^^^^^

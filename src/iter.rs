@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 use proc_macro::{
     token_stream, Delimiter, Group, Ident, Literal, Punct, Spacing, TokenStream, TokenTree,
 };

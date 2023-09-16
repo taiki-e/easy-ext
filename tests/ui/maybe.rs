@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: Apache-2.0 OR MIT
+
 // See also `maybe` test in test.rs
 
 use easy_ext::ext;
