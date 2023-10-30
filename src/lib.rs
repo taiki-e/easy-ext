@@ -184,15 +184,7 @@ impl str {
     )
 ))]
 #![forbid(unsafe_code)]
-#![warn(
-    rust_2018_idioms,
-    // single_use_lifetimes,
-    unreachable_pub,
-    clippy::pedantic,
-)]
-// It cannot be included in the published code because these lints have false positives in the minimum required version.
-#![cfg_attr(test, warn(single_use_lifetimes))]
-#![allow(clippy::cast_lossless, clippy::similar_names, clippy::too_many_lines)]
+#![allow(clippy::cast_lossless)]
 
 // older compilers require explicit `extern crate`.
 #[allow(unused_extern_crates)]
