@@ -349,7 +349,7 @@ pub(crate) mod parsing {
         visit_first_angle_bracket: bool,
         f: fn(Option<&TokenTree>) -> bool,
     ) -> Result<()> {
-        let mut angle_bracket: i32 = 0 - (visit_first_angle_bracket as i32);
+        let mut angle_bracket: i32 = 0 - i32::from(visit_first_angle_bracket);
         loop {
             let tt = input.peek();
             match tt {

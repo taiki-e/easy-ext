@@ -377,7 +377,7 @@ fn syntax() {
 fn angle_bracket() {
     #[ext]
     impl fn() -> () {
-        const FUNC: fn(&u8) -> bool = u8::is_ascii as fn(&u8) -> bool;
+        const FUNC: fn() -> fn() -> fn() -> () = Self::func;
         type Func = fn() -> fn() -> ();
         fn func() -> fn() -> fn() -> () {
             || || {}

@@ -184,7 +184,6 @@ impl str {
     )
 ))]
 #![forbid(unsafe_code)]
-#![allow(clippy::cast_lossless)]
 
 // older compilers require explicit `extern crate`.
 #[allow(unused_extern_crates)]
