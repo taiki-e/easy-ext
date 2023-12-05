@@ -264,7 +264,7 @@ fn determine_trait_generics<'a>(
             }
         });
         if let Some(i) = i {
-            let mut params = mem::replace(&mut generics.params, Vec::new());
+            let mut params = mem::replace(&mut generics.params, vec![]);
             let (param, _) = params.remove(i);
             generics.params = params;
 
@@ -310,7 +310,7 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
 
     impl ReplaceParam {
         fn visit_token_stream(&self, tokens: &mut TokenStream) -> bool {
-            let mut out: Vec<TokenTree> = Vec::new();
+            let mut out: Vec<TokenTree> = vec![];
             let mut modified = false;
             let iter = tokens.clone().into_iter();
             for tt in iter {
@@ -398,7 +398,7 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
                                 let mut iter = pred.bounded_ty.clone().into_iter();
                                 if let Some(TokenTree::Ident(i)) = iter.next() {
                                     if iter.next().is_none() && self.self_ty == i.to_string() {
-                                        let bounds = mem::replace(&mut pred.bounds, Vec::new())
+                                        let bounds = mem::replace(&mut pred.bounds, vec![])
                                             .into_iter()
                                             .filter(|(b, _)| !b.is_maybe)
                                             .collect::<Vec<_>>();

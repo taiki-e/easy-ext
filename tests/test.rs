@@ -525,7 +525,7 @@ fn generic_associated_types() {
         type Sibling<U> = <<Self as Collection<T>>::Family as CollectionFamily>::Member<U>;
 
         fn empty() -> Self {
-            Vec::new()
+            vec![]
         }
 
         fn add(&mut self, value: T) {

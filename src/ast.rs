@@ -26,7 +26,7 @@ impl Generics {
     pub(crate) fn make_where_clause(&mut self) -> &mut WhereClause {
         self.where_clause.get_or_insert_with(|| WhereClause {
             where_token: Ident::new("where", Span::call_site()),
-            predicates: Vec::new(),
+            predicates: vec![],
         })
     }
 
@@ -387,7 +387,7 @@ pub(crate) mod parsing {
     }
 
     fn parse_attrs(input: &mut TokenIter) -> Result<Vec<Attribute>> {
-        let mut attrs = Vec::new();
+        let mut attrs = vec![];
         while input.peek_t(&'#') {
             let pound_token = input.parse_punct('#')?;
             let tokens = input.parse_group(Delimiter::Bracket)?;
@@ -418,7 +418,7 @@ pub(crate) mod parsing {
 
         let lt_token = input.parse_punct('<')?;
 
-        let mut params = Vec::new();
+        let mut params = vec![];
         loop {
             if input.peek_t(&'>') {
                 break;
@@ -434,7 +434,7 @@ pub(crate) mod parsing {
                     attrs,
                     ident: input.parse_ident()?,
                     colon_token: None,
-                    bounds: Vec::new(),
+                    bounds: vec![],
                     eq_token: None,
                     default: None,
                 })
@@ -508,7 +508,7 @@ pub(crate) mod parsing {
             for_token: input.parse_kw("for")?,
             lt_token: input.parse_punct('<')?,
             lifetimes: {
-                let mut lifetimes = Vec::new();
+                let mut lifetimes = vec![];
                 while !input.peek_t(&'>') {
                     let lifetime = parse_lifetime_def(input)?;
                     if input.peek_t(&'>') {
@@ -529,7 +529,7 @@ pub(crate) mod parsing {
         let ident = input.parse_ident()?;
         let colon_token = input.parse_punct_opt(':');
 
-        let mut bounds = Vec::new();
+        let mut bounds = vec![];
         if colon_token.is_some() {
             loop {
                 if input.peek_t(&',') || input.peek_t(&'>') || input.peek_t(&'=') {
@@ -626,7 +626,7 @@ pub(crate) mod parsing {
 
     fn parse_where_clause(input: &mut TokenIter) -> Result<WhereClause> {
         let where_token = input.parse_kw("where")?;
-        let mut predicates = Vec::new();
+        let mut predicates = vec![];
         loop {
             if input.is_empty()
                 || input.peek_t(&Delimiter::Brace)
@@ -654,7 +654,7 @@ pub(crate) mod parsing {
                 lifetime: parse_lifetime(input)?,
                 colon_token: input.parse_punct(':')?,
                 bounds: {
-                    let mut bounds = Vec::new();
+                    let mut bounds = vec![];
                     loop {
                         if input.is_empty()
                             || input.peek_t(&Delimiter::Brace)
@@ -702,7 +702,7 @@ pub(crate) mod parsing {
                 },
                 colon_token: input.parse_punct(':')?,
                 bounds: {
-                    let mut bounds = Vec::new();
+                    let mut bounds = vec![];
                     loop {
                         if input.is_empty()
                             || input.peek_t(&Delimiter::Brace)
@@ -850,7 +850,7 @@ pub(crate) mod parsing {
         let brace_token = g.span();
         let content = &mut TokenIter::new(g.stream());
 
-        let mut items = Vec::new();
+        let mut items = vec![];
         while !content.is_empty() {
             items.push(parse_impl_item(content)?);
         }
