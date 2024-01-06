@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 #![allow(
+    missing_debug_implementations,
     unreachable_pub,
     clippy::items_after_statements,
     clippy::missing_safety_doc,
