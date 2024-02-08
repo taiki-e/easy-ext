@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 #![allow(
+    dead_code,
     missing_debug_implementations,
     unreachable_pub,
     clippy::items_after_statements,
@@ -217,13 +218,11 @@ fn trait_generics() {
     #[ext(Ext2)]
     impl<I: Iterator + ConstInit> I {
         const CONST3: I = {
-            #[allow(dead_code)]
             fn a<I>() {}
             I::INIT1
         };
         type Item4 = I::Item;
         fn method5(self, _: I::Item) -> (Option<I::Item>, <I as Ext2>::Item4) {
-            #[allow(dead_code)]
             fn a<I>() {}
             unimplemented!()
         }
