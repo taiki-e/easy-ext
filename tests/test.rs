@@ -4,6 +4,7 @@
     dead_code,
     missing_debug_implementations,
     unreachable_pub,
+    clippy::incompatible_msrv,
     clippy::items_after_statements,
     clippy::missing_safety_doc,
     clippy::no_effect_underscore_binding,
