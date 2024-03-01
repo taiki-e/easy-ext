@@ -9,7 +9,6 @@
     clippy::no_effect_underscore_binding,
     clippy::undocumented_unsafe_blocks
 )]
-#![allow(clippy::incompatible_msrv)] // https://github.com/rust-lang/rust-clippy/issues/12257
 
 use async_trait::async_trait;
 use easy_ext::ext;
