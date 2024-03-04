@@ -2,7 +2,6 @@
 
 #![allow(
     dead_code,
-    missing_debug_implementations,
     unreachable_pub,
     clippy::items_after_statements,
     clippy::missing_safety_doc,
