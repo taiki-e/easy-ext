@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-#![feature(associated_type_bounds)]
 #![allow(dead_code)]
+
+// TODO: move to tests/test.rs once Rust 1.79 become stable.
 
 // https://github.com/rust-lang/rust/blob/1.70.0/tests/ui/associated-type-bounds/fn-where.rs
 pub mod fn_where {
