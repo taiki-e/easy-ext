@@ -9,8 +9,6 @@ A lightweight attribute macro for easily writing [extension trait pattern][rfc04
 easy-ext = "1"
 ```
 
-*Compiler support: requires rustc 1.31+*
-
 ## Examples
 
 ```rust
