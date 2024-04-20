@@ -301,7 +301,7 @@ fn assoc_ty() {
         type Assoc = String;
 
         fn owned(&self) -> Self::Assoc {
-            self.to_string()
+            self.to_owned()
         }
     }
 
