@@ -9,6 +9,8 @@
     clippy::undocumented_unsafe_blocks
 )]
 
+use std::{pin::Pin, rc::Rc};
+
 use async_trait::async_trait;
 use easy_ext::ext;
 
@@ -640,4 +642,27 @@ fn arg_pat() {
             let _y = y;
         }
     }
+}
+
+#[test]
+fn arbitrary_self_types() {
+    #[ext]
+    #[allow(clippy::needless_arbitrary_self_type)]
+    impl String {
+        fn recv(self: Self) {}
+        fn recv_ref(self: &Self) {}
+        fn recv_mut(self: &mut Self) {}
+        fn recv_rc(self: Rc<Self>) {}
+        fn recv_rc_ref(self: &Rc<Self>) {}
+        fn recv_rc_mut(self: &mut Rc<Self>) {}
+        fn recv_pin_box(self: Pin<Box<Self>>) {}
+    }
+
+    String::default().recv();
+    String::default().recv_ref();
+    String::default().recv_mut();
+    Rc::new(String::default()).recv_rc();
+    Rc::new(String::default()).recv_rc_ref();
+    Rc::new(String::default()).recv_rc_mut();
+    Box::pin(String::default()).recv_pin_box();
 }
