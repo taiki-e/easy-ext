@@ -10,13 +10,15 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Fix error with arbitrary self types. ([#42](https://github.com/taiki-e/easy-ext/pull/42), thanks @mbazero)
+
 ## [1.0.1] - 2022-09-29
 
 - Fix "patterns aren't allowed in functions without bodies" error when patterns are used in arguments.
 
 ## [1.0.0] - 2021-08-24
 
-- [Remove deprecated old impl-level visibility syntax (`#[ext(pub)]`).](https://github.com/taiki-e/easy-ext/pull/38)
+- Remove deprecated old impl-level visibility syntax (`#[ext(pub)]`). ([#38](https://github.com/taiki-e/easy-ext/pull/38))
 
   Use `pub impl` syntax instead:
 
@@ -31,13 +33,13 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.2.9] - 2021-07-03
 
-- [Fix bug in parsing of where clause.](https://github.com/taiki-e/easy-ext/pull/37)
+- Fix bug in parsing of where clause. ([#37](https://github.com/taiki-e/easy-ext/pull/37))
 
 ## [0.2.8] - 2021-06-23
 
 **Note:** This release has been yanked because of regression which fixed in 0.2.9.
 
-- [Support specifying visibility directly on `impl`.](https://github.com/taiki-e/easy-ext/pull/31)
+- Support specifying visibility directly on `impl`. ([#31](https://github.com/taiki-e/easy-ext/pull/31))
 
   ```rust
   #[ext(Ext)]
@@ -64,17 +66,17 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
   }
   ```
 
-- [Improve compile time by removing all dependencies.](https://github.com/taiki-e/easy-ext/pull/35)
+- Improve compile time by removing all dependencies. ([#35](https://github.com/taiki-e/easy-ext/pull/35))
 
-- [Support type parameter defaults.](https://github.com/taiki-e/easy-ext/pull/32)
+- Support type parameter defaults. ([#32](https://github.com/taiki-e/easy-ext/pull/32))
 
 ## [0.2.7] - 2021-03-25
 
-- [Support associated types.](https://github.com/taiki-e/easy-ext/pull/26)
+- Support associated types. ([#26](https://github.com/taiki-e/easy-ext/pull/26))
 
 ## [0.2.6] - 2021-01-19
 
-- [Support specifying visibility at impl-level.](https://github.com/taiki-e/easy-ext/pull/25)
+- Support specifying visibility at impl-level. ([#25](https://github.com/taiki-e/easy-ext/pull/25))
 
 ## [0.2.5] - 2021-01-05
 
@@ -90,7 +92,7 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.2.2] - 2020-07-22
 
-- [Fix `unused_attributes` lint in generated code.](https://github.com/taiki-e/easy-ext/pull/22)
+- Fix `unused_attributes` lint in generated code. ([#22](https://github.com/taiki-e/easy-ext/pull/22))
 
 - Diagnostic improvements.
 
@@ -108,11 +110,11 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [0.1.7] - 2020-04-20
 
-- [Supported unnamed extension trait.](https://github.com/taiki-e/easy-ext/pull/9)
+- Supported unnamed extension trait. ([#9](https://github.com/taiki-e/easy-ext/pull/9))
 
 ## [0.1.6] - 2019-10-12
 
-- [Improved error messages related to visibility.](https://github.com/taiki-e/easy-ext/pull/5)
+- Improved error messages related to visibility. ([#5](https://github.com/taiki-e/easy-ext/pull/5))
 
 ## [0.1.5] - 2019-08-15
 
