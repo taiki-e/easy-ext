@@ -560,11 +560,13 @@ fn trait_item_from_impl_item(
                     let mut sig = impl_method.sig.clone();
                     for arg in &mut sig.inputs {
                         if let FnArg::Typed(pat, ..) = arg {
-                            *pat = std::iter::once(TokenTree::Ident(Ident::new(
-                                "_",
-                                pat.clone().into_iter().next().unwrap().span(),
-                            )))
-                            .collect();
+                            if pat.to_string() != "self" {
+                                *pat = std::iter::once(TokenTree::Ident(Ident::new(
+                                    "_",
+                                    pat.clone().into_iter().next().unwrap().span(),
+                                )))
+                                .collect();
+                            }
                         }
                     }
                     sig
