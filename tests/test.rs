@@ -666,3 +666,65 @@ fn arbitrary_self_types() {
     Rc::new(String::default()).recv_rc_mut();
     Box::pin(String::default()).recv_pin_box();
 }
+
+#[test]
+fn impl_only_attrs() {
+    #![deny(unused_variables)]
+    #![allow(non_camel_case_types)]
+
+    #[ext(E1)]
+    #[ext_attr(impl_only)]
+    #[allow(unused_variables)]
+    impl str {
+        fn foo(&self) {
+            let x = 0;
+        }
+    }
+
+    #[ext(E2)]
+    impl str {
+        #[ext_attr(impl_only)]
+        #[allow(unused_variables)]
+        fn foo(&self) {
+            let x = 0;
+        }
+    }
+
+    #[ext(not_camel_case)]
+    #[ext_attr(impl_only)]
+    #[deny(non_camel_case_types)]
+    impl str {
+        fn foo(&self) {}
+    }
+}
+
+#[test]
+fn trait_only_attrs() {
+    #![allow(unused_variables)]
+    #![deny(non_camel_case_types)]
+
+    #[ext(E1)]
+    #[ext_attr(trait_only)]
+    #[deny(unused_variables)]
+    impl str {
+        fn foo(&self) {
+            let x = 0;
+        }
+    }
+
+    #[ext(E2)]
+    impl str {
+        #[ext_attr(trait_only)]
+        #[deny(unused_variables)]
+        fn foo(&self) {
+            let x = 0;
+        }
+    }
+
+    #[ext(not_camel_case)]
+    #[ext_attr(trait_only)]
+    #[allow(non_camel_case_types)]
+    impl str {
+        fn foo(&self) {}
+    }
+}
