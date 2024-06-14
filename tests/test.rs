@@ -277,7 +277,7 @@ fn maybe() {
     where
         T: Iterator,
         T: ?Sized,
-        T: Default,
+        T: Send,
     {
         fn f(&self) {}
     }
