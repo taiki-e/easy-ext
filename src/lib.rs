@@ -340,7 +340,7 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
 
         // Everything below is simply traversing the syntax tree.
 
-        fn visit_trait_item_mut(&mut self, node: &mut TraitItem) {
+        fn visit_trait_item_mut(&self, node: &mut TraitItem) {
             match node {
                 TraitItem::Const(node) => {
                     self.visit_token_stream(&mut node.ty);
@@ -354,7 +354,7 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
             }
         }
 
-        fn visit_signature_mut(&mut self, node: &mut Signature) {
+        fn visit_signature_mut(&self, node: &mut Signature) {
             self.visit_generics_mut(&mut node.generics);
             for arg in &mut node.inputs {
                 self.visit_fn_arg_mut(arg);
@@ -364,7 +364,7 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
             }
         }
 
-        fn visit_fn_arg_mut(&mut self, node: &mut FnArg) {
+        fn visit_fn_arg_mut(&self, node: &mut FnArg) {
             match node {
                 FnArg::Receiver(pat, _) => {
                     self.visit_token_stream(pat);
@@ -376,7 +376,7 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
             }
         }
 
-        fn visit_generics_mut(&mut self, generics: &mut Generics) {
+        fn visit_generics_mut(&self, generics: &mut Generics) {
             for (param, _) in &mut generics.params {
                 match param {
                     GenericParam::Type(param) => {
