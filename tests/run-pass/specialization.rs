@@ -8,7 +8,7 @@
 pub mod default_impl {
     // I don't feel `default impl` is the good feature to combine with ext trait, but test anyway.
 
-    // https://github.com/rust-lang/rust/blob/1.70.0/tests/ui/specialization/defaultimpl/auxiliary/go_trait.rs
+    // https://github.com/rust-lang/rust/blob/1.80.0/tests/ui/specialization/defaultimpl/auxiliary/go_trait.rs
     pub mod go_trait {
         use easy_ext::ext;
 
