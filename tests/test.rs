@@ -158,12 +158,12 @@ fn visibility() {
 fn generics() {
     #[ext(IterExt)]
     impl<I: IntoIterator> I {
-        fn _next(self) -> Option<I::Item> {
+        fn next2(self) -> Option<I::Item> {
             self.into_iter().next()
         }
     }
 
-    assert_eq!(vec![1, 2, 3]._next(), Some(1_u8));
+    assert_eq!(vec![1, 2, 3].next2(), Some(1_u8));
 }
 
 #[test]
