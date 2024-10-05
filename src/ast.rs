@@ -1023,16 +1023,10 @@ pub(crate) mod printing {
     };
     use crate::to_tokens::ToTokens;
 
-    pub(crate) fn punct(ch: char, span: Span) -> Punct {
-        let mut p = Punct::new(ch, Spacing::Alone);
-        p.set_span(span);
-        p
-    }
-
     fn tokens_or_default(p: &Option<Punct>, ch: char, tokens: &mut TokenStream) {
         match p {
             Some(p) => p.to_tokens(tokens),
-            None => punct(ch, Span::call_site()).to_tokens(tokens),
+            None => Punct::new(ch, Spacing::Alone).to_tokens(tokens),
         }
     }
 
@@ -1061,7 +1055,7 @@ pub(crate) mod printing {
                 match param {
                     GenericParam::Type(_) | GenericParam::Const(_) => {
                         if !trailing_or_empty {
-                            punct(',', Span::call_site()).to_tokens(tokens);
+                            Punct::new(',', Spacing::Alone).to_tokens(tokens);
                             trailing_or_empty = true;
                         }
                         param.to_tokens(tokens);
@@ -1178,7 +1172,7 @@ pub(crate) mod printing {
                     continue;
                 }
                 if !trailing_or_empty {
-                    punct(',', Span::call_site()).to_tokens(tokens);
+                    Punct::new(',', Spacing::Alone).to_tokens(tokens);
                     trailing_or_empty = true;
                 }
                 match param {
@@ -1235,7 +1229,7 @@ pub(crate) mod printing {
                     continue;
                 }
                 if !trailing_or_empty {
-                    punct(',', Span::call_site()).to_tokens(tokens);
+                    Punct::new(',', Spacing::Alone).to_tokens(tokens);
                     trailing_or_empty = true;
                 }
                 match param {

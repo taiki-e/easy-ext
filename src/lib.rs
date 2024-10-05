@@ -196,13 +196,13 @@ mod to_tokens;
 
 use std::{collections::hash_map::DefaultHasher, hash::Hasher, iter::FromIterator, mem};
 
-use proc_macro::{Delimiter, Group, Ident, Span, TokenStream, TokenTree};
+use proc_macro::{Delimiter, Group, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 
 use crate::{
     ast::{
-        parsing, printing::punct, Attribute, AttributeKind, FnArg, GenericParam, Generics,
-        ImplItem, ItemImpl, ItemTrait, PredicateType, Signature, TraitItem, TraitItemConst,
-        TraitItemMethod, TraitItemType, TypeParam, Visibility, WherePredicate,
+        parsing, Attribute, AttributeKind, FnArg, GenericParam, Generics, ImplItem, ItemImpl,
+        ItemTrait, PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod,
+        TraitItemType, TypeParam, Visibility, WherePredicate,
     },
     error::{Error, Result},
     iter::TokenIter,
@@ -274,7 +274,7 @@ fn determine_trait_generics<'a>(
                 if !bounds.is_empty() {
                     let where_clause = generics.make_where_clause();
                     if let Some((_, p)) = where_clause.predicates.last_mut() {
-                        p.get_or_insert_with(|| punct(',', Span::call_site()));
+                        p.get_or_insert_with(|| Punct::new(',', Spacing::Alone));
                     }
                     where_clause.predicates.push((
                         WherePredicate::Type(PredicateType {
@@ -571,7 +571,11 @@ fn trait_item_from_impl_item(
                     }
                     sig
                 },
-                semi_token: punct(';', impl_method.body.span()),
+                semi_token: {
+                    let mut punct = Punct::new(';', Spacing::Alone);
+                    punct.set_span(impl_method.body.span());
+                    punct
+                },
             }))
         }
     }
