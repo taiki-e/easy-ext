@@ -448,7 +448,7 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
     let mut assoc_vis = None;
     let mut items = Vec::with_capacity(item.items.len());
     item.items.iter_mut().try_for_each(|item| {
-        trait_item_from_impl_item(item, &mut assoc_vis, &impl_vis).map(|mut item| {
+        trait_item_from_impl_item(item, &mut assoc_vis, impl_vis.as_ref()).map(|mut item| {
             if let Some(visitor) = &mut visitor {
                 visitor.visit_trait_item_mut(&mut item);
             }
@@ -486,12 +486,12 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
 fn trait_item_from_impl_item(
     impl_item: &mut ImplItem,
     prev_vis: &mut Option<Visibility>,
-    impl_vis: &Option<Visibility>,
+    impl_vis: Option<&Visibility>,
 ) -> Result<TraitItem> {
     fn check_visibility(
         current: Visibility,
         prev: &mut Option<Visibility>,
-        impl_vis: &Option<Visibility>,
+        impl_vis: Option<&Visibility>,
         span: &dyn ToTokens,
     ) -> Result<()> {
         if impl_vis.is_some() {

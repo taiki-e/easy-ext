@@ -1023,7 +1023,7 @@ pub(crate) mod printing {
     };
     use crate::to_tokens::ToTokens;
 
-    fn tokens_or_default(p: &Option<Punct>, ch: char, tokens: &mut TokenStream) {
+    fn tokens_or_default(p: Option<&Punct>, ch: char, tokens: &mut TokenStream) {
         match p {
             Some(p) => p.to_tokens(tokens),
             None => Punct::new(ch, Spacing::Alone).to_tokens(tokens),
@@ -1036,7 +1036,7 @@ pub(crate) mod printing {
                 return;
             }
 
-            tokens_or_default(&self.lt_token, '<', tokens);
+            tokens_or_default(self.lt_token.as_ref(), '<', tokens);
 
             // Print lifetimes before types and consts, regardless of their
             // order in self.params.
@@ -1065,7 +1065,7 @@ pub(crate) mod printing {
                 }
             }
 
-            tokens_or_default(&self.gt_token, '>', tokens);
+            tokens_or_default(self.gt_token.as_ref(), '>', tokens);
         }
     }
 
@@ -1102,7 +1102,7 @@ pub(crate) mod printing {
             self.attrs.to_tokens(tokens);
             self.lifetime.to_tokens(tokens);
             if !self.bounds.is_empty() {
-                tokens_or_default(&self.colon_token, ':', tokens);
+                tokens_or_default(self.colon_token.as_ref(), ':', tokens);
                 self.bounds.to_tokens(tokens);
             }
         }
@@ -1113,14 +1113,14 @@ pub(crate) mod printing {
             self.attrs.to_tokens(tokens);
             self.ident.to_tokens(tokens);
             if !self.bounds.is_empty() {
-                tokens_or_default(&self.colon_token, ':', tokens);
+                tokens_or_default(self.colon_token.as_ref(), ':', tokens);
                 for (bound, punct) in &self.bounds {
                     bound.to_tokens(tokens);
                     punct.to_tokens(tokens);
                 }
             }
             if let Some(default) = &self.default {
-                tokens_or_default(&self.eq_token, '=', tokens);
+                tokens_or_default(self.eq_token.as_ref(), '=', tokens);
                 default.to_tokens(tokens);
             }
         }
@@ -1140,7 +1140,7 @@ pub(crate) mod printing {
             self.colon_token.to_tokens(tokens);
             self.ty.to_tokens(tokens);
             if let Some(default) = &self.default {
-                tokens_or_default(&self.eq_token, '=', tokens);
+                tokens_or_default(self.eq_token.as_ref(), '=', tokens);
                 default.to_tokens(tokens);
             }
         }
@@ -1152,7 +1152,7 @@ pub(crate) mod printing {
                 return;
             }
 
-            tokens_or_default(&self.0.lt_token, '<', tokens);
+            tokens_or_default(self.0.lt_token.as_ref(), '<', tokens);
 
             // Print lifetimes before types and consts, regardless of their
             // order in self.params.
@@ -1182,7 +1182,7 @@ pub(crate) mod printing {
                         param.attrs.to_tokens(tokens);
                         param.ident.to_tokens(tokens);
                         if !param.bounds.is_empty() {
-                            tokens_or_default(&param.colon_token, ':', tokens);
+                            tokens_or_default(param.colon_token.as_ref(), ':', tokens);
                             param.bounds.to_tokens(tokens);
                         }
                     }
@@ -1198,7 +1198,7 @@ pub(crate) mod printing {
                 p.to_tokens(tokens);
             }
 
-            tokens_or_default(&self.0.gt_token, '>', tokens);
+            tokens_or_default(self.0.gt_token.as_ref(), '>', tokens);
         }
     }
 
@@ -1208,7 +1208,7 @@ pub(crate) mod printing {
                 return;
             }
 
-            tokens_or_default(&self.0.lt_token, '<', tokens);
+            tokens_or_default(self.0.lt_token.as_ref(), '<', tokens);
 
             // Print lifetimes before types and consts, regardless of their
             // order in self.params.
@@ -1246,7 +1246,7 @@ pub(crate) mod printing {
                 p.to_tokens(tokens);
             }
 
-            tokens_or_default(&self.0.gt_token, '>', tokens);
+            tokens_or_default(self.0.gt_token.as_ref(), '>', tokens);
         }
     }
 
