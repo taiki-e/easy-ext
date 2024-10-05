@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-use std::iter::FromIterator;
+use std::iter::{self, FromIterator};
 
 use proc_macro::{Delimiter, Group, Ident, Literal, Punct, Spacing, Span, TokenStream, TokenTree};
 
@@ -54,11 +54,12 @@ impl Error {
             }),
             TokenTree::Group({
                 let mut group = Group::new(Delimiter::Brace, {
-                    TokenStream::from_iter(vec![TokenTree::Literal({
+                    iter::once(TokenTree::Literal({
                         let mut string = Literal::string(&self.msg);
                         string.set_span(self.end_span);
                         string
-                    })])
+                    }))
+                    .collect()
                 });
                 group.set_span(self.end_span);
                 group

@@ -228,7 +228,7 @@ fn expand(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let mut item: ItemImpl = parsing::parse_impl(&mut TokenIter::new(input))?;
 
     let mut tokens = trait_from_impl(&mut item, trait_name)?.to_token_stream();
-    tokens.extend(item.to_token_stream());
+    item.to_tokens(&mut tokens);
     Ok(tokens)
 }
 
@@ -279,9 +279,11 @@ fn determine_trait_generics<'a>(
                     where_clause.predicates.push((
                         WherePredicate::Type(PredicateType {
                             lifetimes: None,
-                            bounded_ty: vec![TokenTree::Ident(Ident::new("Self", self_ty.span()))]
-                                .into_iter()
-                                .collect(),
+                            bounded_ty: std::iter::once(TokenTree::Ident(Ident::new(
+                                "Self",
+                                self_ty.span(),
+                            )))
+                            .collect(),
                             colon_token,
                             bounds,
                         }),
