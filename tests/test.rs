@@ -12,7 +12,6 @@
 
 use std::{pin::Pin, rc::Rc};
 
-use async_trait::async_trait;
 use easy_ext::ext;
 
 #[test]
@@ -338,12 +337,18 @@ fn syntax() {
         extern "C" fn abi2() {}
         unsafe extern "C" fn unsafe_abi1() {}
         unsafe extern "C" fn unsafe_abi2() {}
+        async fn asyncness(&self) {}
+        async unsafe fn unsafe_asyncness(&self) {}
     }
 
     "a".normal();
     unsafe { "?".unsafety() };
     str::abi1();
     unsafe { str::unsafe_abi1() };
+    let _ = async {
+        "a".asyncness().await;
+        unsafe { "b".unsafe_asyncness().await }
+    };
 
     struct S {}
     unsafe impl E1 for S {
@@ -353,22 +358,6 @@ fn syntax() {
         extern "C" fn abi2() {}
         unsafe extern "C" fn unsafe_abi1() {}
         unsafe extern "C" fn unsafe_abi2() {}
-    }
-
-    #[ext(E2)]
-    #[async_trait]
-    impl str {
-        async fn asyncness(&self) {}
-        async unsafe fn unsafe_asyncness(&self) {}
-    }
-
-    let _ = async {
-        "a".asyncness().await;
-        unsafe { "b".unsafe_asyncness().await }
-    };
-
-    #[async_trait]
-    impl E2 for S {
         async fn asyncness(&self) {}
         async unsafe fn unsafe_asyncness(&self) {}
     }
