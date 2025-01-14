@@ -487,13 +487,13 @@ mod const_generics_defaults {
     impl<const N: usize> Trait<N> for () {}
     impl Trait for u8 {}
 
-    // https://github.com/rust-lang/rust/blob/1.80.0/tests/ui/const-generics/defaults/const-param-as-default-value.rs
+    // https://github.com/rust-lang/rust/blob/1.84.0/tests/ui/const-generics/defaults/const-param-as-default-value.rs
     #[ext(Ext2)]
     impl<const N: usize, const M: usize = N> () {}
 }
 
 mod generic_associated_types {
-    // https://github.com/rust-lang/rust/blob/1.80.0/tests/ui/generic-associated-types/collections.rs
+    // https://github.com/rust-lang/rust/blob/1.84.0/tests/ui/generic-associated-types/collections.rs
 
     use easy_ext::ext;
 
@@ -533,7 +533,7 @@ mod generic_associated_types {
 }
 
 mod associated_type_bounds {
-    // https://github.com/rust-lang/rust/blob/1.80.0/tests/ui/associated-type-bounds/fn-where.rs
+    // https://github.com/rust-lang/rust/blob/1.84.0/tests/ui/associated-type-bounds/fn-where.rs
     mod fn_where {
         use easy_ext::ext;
 
@@ -599,7 +599,7 @@ mod associated_type_bounds {
         }
     }
 
-    // https://github.com/rust-lang/rust/blob/1.80.0/tests/ui/associated-type-bounds/auxiliary/fn-aux.rs
+    // https://github.com/rust-lang/rust/blob/1.84.0/tests/ui/associated-type-bounds/auxiliary/fn-aux.rs
     mod fn_aux {
         // Traits:
 
