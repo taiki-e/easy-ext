@@ -342,9 +342,9 @@ fn syntax() {
     }
 
     "a".normal();
-    unsafe { "?".unsafety() };
+    unsafe { "?".unsafety() }
     str::abi1();
-    unsafe { str::unsafe_abi1() };
+    unsafe { str::unsafe_abi1() }
     let _ = async {
         "a".asyncness().await;
         unsafe { "b".unsafe_asyncness().await }
