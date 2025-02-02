@@ -1,7 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 /*!
-<!-- tidy:crate-doc:start -->
+<!-- Note: Document from sync-markdown-to-rustdoc:start through sync-markdown-to-rustdoc:end
+     is synchronized from README.md. Any changes to that range are not preserved. -->
+<!-- tidy:sync-markdown-to-rustdoc:start -->
+
 A lightweight attribute macro for easily writing [extension trait pattern][rfc0445].
 
 ```toml
@@ -11,7 +14,7 @@ easy-ext = "1"
 
 ## Examples
 
-```rust
+```
 use easy_ext::ext;
 
 #[ext(ResultExt)]
@@ -27,7 +30,7 @@ pub impl<T, E> Result<T, E> {
 
 Code like this will be generated:
 
-```rust
+```
 pub trait ResultExt<T, E> {
     fn err_into<U>(self) -> Result<T, U>
     where
@@ -46,7 +49,7 @@ impl<T, E> ResultExt<T, E> for Result<T, E> {
 
 You can elide the trait name.
 
-```rust
+```
 use easy_ext::ext;
 
 #[ext]
@@ -71,7 +74,7 @@ There are two ways to specify visibility.
 
 The first way is to specify visibility at the impl level. For example:
 
-```rust
+```
 use easy_ext::ext;
 
 // unnamed
@@ -93,7 +96,7 @@ Another way is to specify visibility at the associated item level.
 
 For example, if the method is `pub` then the trait will also be `pub`:
 
-```rust
+```
 use easy_ext::ext;
 
 #[ext(ResultExt)] // generate `pub trait ResultExt`
@@ -118,7 +121,7 @@ Note that you cannot specify impl-level visibility and associated-item-level vis
 If you want the extension trait to be a subtrait of another trait,
 add `Self: SubTrait` bound to the `where` clause.
 
-```rust
+```
 use easy_ext::ext;
 
 #[ext(Ext)]
@@ -134,7 +137,7 @@ where
 
 #### [Associated functions (methods)](https://doc.rust-lang.org/reference/items/associated-items.html#associated-functions-and-methods)
 
-```rust
+```
 use easy_ext::ext;
 
 #[ext]
@@ -145,7 +148,7 @@ impl<T> T {
 
 #### [Associated constants](https://doc.rust-lang.org/reference/items/associated-items.html#associated-constants)
 
-```rust
+```
 use easy_ext::ext;
 
 #[ext]
@@ -156,7 +159,7 @@ impl<T> T {
 
 #### [Associated types](https://doc.rust-lang.org/reference/items/associated-items.html#associated-types)
 
-```rust
+```
 use easy_ext::ext;
 
 #[ext]
@@ -171,7 +174,7 @@ impl str {
 
 [rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
 
-<!-- tidy:crate-doc:end -->
+<!-- tidy:sync-markdown-to-rustdoc:end -->
 */
 
 #![doc(test(
