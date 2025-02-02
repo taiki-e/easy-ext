@@ -175,7 +175,7 @@ impl str {
 }
 ```
 
-[rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
+[rfc0445]: https://rust-lang.github.io/rfcs/0445-extension-trait-conventions.html
 
 <!-- tidy:sync-markdown-to-rustdoc:end -->
 

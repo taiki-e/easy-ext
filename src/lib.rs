@@ -172,7 +172,7 @@ impl str {
 }
 ```
 
-[rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
+[rfc0445]: https://rust-lang.github.io/rfcs/0445-extension-trait-conventions.html
 
 <!-- tidy:sync-markdown-to-rustdoc:end -->
 */
@@ -214,9 +214,9 @@ use crate::{
 
 /// A lightweight attribute macro for easily writing [extension trait pattern][rfc0445].
 ///
-/// See crate level documentation for details.
+/// See the [crate-level documentation](crate) for details.
 ///
-/// [rfc0445]: https://github.com/rust-lang/rfcs/blob/HEAD/text/0445-extension-trait-conventions.md
+/// [rfc0445]: https://rust-lang.github.io/rfcs/0445-extension-trait-conventions.html
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
     expand(args, input).unwrap_or_else(Error::into_compile_error)
