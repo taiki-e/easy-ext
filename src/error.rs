@@ -42,26 +42,50 @@ impl Error {
         Self { start_span, end_span, msg }
     }
 
-    // Based on https://github.com/dtolnay/syn/blob/1.0.39/src/error.rs#L210-L237
+    // Based on https://github.com/dtolnay/syn/blob/2.0.95/src/error.rs#L282-L322
     pub(crate) fn into_compile_error(self) -> TokenStream {
-        // compile_error!($msg)
+        let (start, end) = (self.start_span, self.end_span);
+        // Note that using builtin macros as {core,std}:: are only available on Rust 1.38+ https://github.com/rust-lang/rust/pull/63056
+        // but that is fine because it only makes the diagnostics on the older version worse.
+        // ::core::compile_error!($msg)
         TokenStream::from_iter(vec![
-            TokenTree::Ident(Ident::new("compile_error", self.start_span)),
+            TokenTree::Punct({
+                let mut punct = Punct::new(':', Spacing::Joint);
+                punct.set_span(start);
+                punct
+            }),
+            TokenTree::Punct({
+                let mut punct = Punct::new(':', Spacing::Alone);
+                punct.set_span(start);
+                punct
+            }),
+            TokenTree::Ident(Ident::new("core", start)),
+            TokenTree::Punct({
+                let mut punct = Punct::new(':', Spacing::Joint);
+                punct.set_span(start);
+                punct
+            }),
+            TokenTree::Punct({
+                let mut punct = Punct::new(':', Spacing::Alone);
+                punct.set_span(start);
+                punct
+            }),
+            TokenTree::Ident(Ident::new("compile_error", start)),
             TokenTree::Punct({
                 let mut punct = Punct::new('!', Spacing::Alone);
-                punct.set_span(self.start_span);
+                punct.set_span(start);
                 punct
             }),
             TokenTree::Group({
                 let mut group = Group::new(Delimiter::Brace, {
                     iter::once(TokenTree::Literal({
                         let mut string = Literal::string(&self.msg);
-                        string.set_span(self.end_span);
+                        string.set_span(end);
                         string
                     }))
                     .collect()
                 });
-                group.set_span(self.end_span);
+                group.set_span(end);
                 group
             }),
         ])

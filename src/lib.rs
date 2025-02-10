@@ -63,8 +63,14 @@ impl<T, E> Result<T, E> {
 }
 ```
 
-Note that in this case, `#[ext]` assigns a random name, so you cannot
-import/export the generated trait.
+<div class="rustdoc-alert rustdoc-alert-note">
+
+> **ⓘ Note**
+>
+> When the trait name is elided, `#[ext]` assigns a random name, so you cannot
+> import/export the generated trait.
+
+</div>
 
 ### Visibility
 
@@ -112,9 +118,15 @@ impl<T, E> Result<T, E> {
 
 This is useful when migrate from an inherent impl to an extension trait.
 
-Note that the visibility of all the associated items in the `impl` must be identical.
+<div class="rustdoc-alert rustdoc-alert-note">
 
-Note that you cannot specify impl-level visibility and associated-item-level visibility at the same time.
+> **ⓘ Note**
+>
+>
+> - The visibility of all the associated items in the `impl` must be identical.
+> - You cannot specify impl-level visibility and associated-item-level visibility at the same time.
+
+</div>
 
 ### [Supertraits](https://doc.rust-lang.org/reference/items/traits.html#supertraits)
 
@@ -219,10 +231,10 @@ use crate::{
 /// [rfc0445]: https://rust-lang.github.io/rfcs/0445-extension-trait-conventions.html
 #[proc_macro_attribute]
 pub fn ext(args: TokenStream, input: TokenStream) -> TokenStream {
-    expand(args, input).unwrap_or_else(Error::into_compile_error)
+    attribute(args, input).unwrap_or_else(Error::into_compile_error)
 }
 
-fn expand(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
+fn attribute(args: TokenStream, input: TokenStream) -> Result<TokenStream> {
     let trait_name = match parse_args(args)? {
         None => Ident::new(&format!("__ExtTrait{}", hash(&input)), Span::call_site()),
         Some(trait_name) => trait_name,

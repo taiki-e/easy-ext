@@ -14,6 +14,7 @@ A lightweight attribute macro for easily writing extension trait pattern.
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
+rustdoc-args = ["--extend-css", "src/rustdoc.css"]
 
 [lib]
 proc-macro = true

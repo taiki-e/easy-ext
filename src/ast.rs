@@ -833,6 +833,7 @@ pub(crate) mod parsing {
         let mut generics: Generics =
             if has_generics { parse_generics(input)? } else { Generics::default() };
 
+        // TODO: ?const
         let const_token = input.parse_kw_opt("const");
 
         let mut self_ty = vec![];

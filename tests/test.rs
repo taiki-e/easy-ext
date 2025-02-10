@@ -473,7 +473,7 @@ fn min_const_generics() {
 }
 
 mod const_generics_defaults {
-    // https://github.com/rust-lang/rust/tree/1.80.0/tests/ui/const-generics/defaults
+    // https://github.com/rust-lang/rust/tree/1.84.0/tests/ui/const-generics/defaults
 
     use easy_ext::ext;
 
