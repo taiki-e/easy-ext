@@ -203,9 +203,9 @@ use proc_macro::{Delimiter, Group, Ident, Punct, Spacing, Span, TokenStream, Tok
 
 use crate::{
     ast::{
-        parsing, Attribute, AttributeKind, FnArg, GenericParam, Generics, ImplItem, ItemImpl,
-        ItemTrait, PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod,
-        TraitItemType, TypeParam, Visibility, WherePredicate,
+        Attribute, AttributeKind, FnArg, GenericParam, Generics, ImplItem, ItemImpl, ItemTrait,
+        PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType,
+        TypeParam, Visibility, WherePredicate, parsing,
     },
     error::{Error, Result},
     iter::TokenIter,

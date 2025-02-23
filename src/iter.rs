@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
 use proc_macro::{
-    token_stream, Delimiter, Group, Ident, Literal, Punct, Spacing, TokenStream, TokenTree,
+    Delimiter, Group, Ident, Literal, Punct, Spacing, TokenStream, TokenTree, token_stream,
 };
 
 use crate::error::Result;
@@ -132,11 +132,7 @@ impl TokenIter {
         let tt = self.next();
         match &tt {
             Some(TokenTree::Ident(i)) if i.to_string() == kw => {
-                if let Some(TokenTree::Ident(i)) = tt {
-                    Ok(i)
-                } else {
-                    unreachable!()
-                }
+                if let Some(TokenTree::Ident(i)) = tt { Ok(i) } else { unreachable!() }
             }
             // TODO: pass scope span if tt is None
             tt => bail!(tt, "expected `{}`", kw),
@@ -144,11 +140,7 @@ impl TokenIter {
     }
 
     pub(crate) fn parse_kw_opt(&mut self, kw: &str) -> Option<Ident> {
-        if self.peek_t(&kw) {
-            Some(self.parse_ident().unwrap())
-        } else {
-            None
-        }
+        if self.peek_t(&kw) { Some(self.parse_ident().unwrap()) } else { None }
     }
 
     pub(crate) fn peek_punct(&mut self, ch: char) -> Option<&Punct> {
@@ -169,11 +161,7 @@ impl TokenIter {
         let tt = self.next();
         match &tt {
             Some(TokenTree::Punct(p)) if p.as_char() == ch => {
-                if let Some(TokenTree::Punct(p)) = tt {
-                    Ok(p)
-                } else {
-                    unreachable!()
-                }
+                if let Some(TokenTree::Punct(p)) = tt { Ok(p) } else { unreachable!() }
             }
             // TODO: pass scope span if tt is None
             tt => bail!(tt, "expected `{}`", ch),
@@ -199,11 +187,7 @@ impl TokenIter {
         let tt = self.next();
         match &tt {
             Some(TokenTree::Group(g)) if g.delimiter() == delimiter => {
-                if let Some(TokenTree::Group(g)) = tt {
-                    Ok(g)
-                } else {
-                    unreachable!()
-                }
+                if let Some(TokenTree::Group(g)) = tt { Ok(g) } else { unreachable!() }
             }
             tt => {
                 let d = match delimiter {

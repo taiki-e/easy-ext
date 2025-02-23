@@ -679,11 +679,7 @@ pub(crate) mod parsing {
         } else {
             Ok(WherePredicate::Type(PredicateType {
                 lifetimes: {
-                    if input.peek_t(&"for") {
-                        Some(parse_bound_lifetimes(input)?)
-                    } else {
-                        None
-                    }
+                    if input.peek_t(&"for") { Some(parse_bound_lifetimes(input)?) } else { None }
                 },
                 bounded_ty: {
                     let mut ty = vec![];

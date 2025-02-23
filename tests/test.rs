@@ -141,8 +141,8 @@ mod bar {
 #[test]
 fn visibility() {
     use self::bar::{
-        baz::{E5, E7},
         E1, E2,
+        baz::{E5, E7},
     };
 
     assert_eq!("..".foo1("."), "__");
