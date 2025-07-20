@@ -1,31 +1,31 @@
-error[E0658]: `?Trait` bounds are only permitted at the point where a type parameter is declared
+error: this relaxed bound is not permitted here
   --> tests/ui/maybe.rs:34:11
    |
 34 |     Self: ?Sized,
    |           ^^^^^^
    |
-   = help: add `#![feature(more_maybe_bounds)]` to the crate attributes to enable
+   = note: in this context, relaxed bounds are only allowed on type parameters defined by the closest item
 
-error[E0658]: `?Trait` bounds are only permitted at the point where a type parameter is declared
+error: this relaxed bound is not permitted here
   --> tests/ui/maybe.rs:45:11
    |
 45 |     Self: ?Sized,
    |           ^^^^^^
    |
-   = help: add `#![feature(more_maybe_bounds)]` to the crate attributes to enable
+   = note: in this context, relaxed bounds are only allowed on type parameters defined by the closest item
 
-error[E0658]: `?Trait` bounds are only permitted at the point where a type parameter is declared
+error: this relaxed bound is not permitted here
   --> tests/ui/maybe.rs:75:12
    |
 75 |         T: ?Sized,
    |            ^^^^^^
    |
-   = help: add `#![feature(more_maybe_bounds)]` to the crate attributes to enable
+   = note: in this context, relaxed bounds are only allowed on type parameters defined by the closest item
 
-error[E0658]: `?Trait` bounds are only permitted at the point where a type parameter is declared
+error: this relaxed bound is not permitted here
   --> tests/ui/maybe.rs:24:11
    |
 24 |     Self: ?Sized,
    |           ^^^^^^
    |
-   = help: add `#![feature(more_maybe_bounds)]` to the crate attributes to enable
+   = note: in this context, relaxed bounds are only allowed on type parameters defined by the closest item
