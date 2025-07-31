@@ -7,7 +7,7 @@ error[E0603]: trait `StrExt1` is private
 note: the trait `StrExt1` is defined here
   --> tests/ui/visibility.rs:7:5
    |
-7  |     impl str {
+ 7 |     impl str {
    |     ^^^^^^^^
 
 error[E0603]: trait `StrExt2` is private
