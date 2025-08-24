@@ -329,8 +329,9 @@ fn assoc_ty() {
 #[allow(clippy::let_underscore_future)]
 #[test]
 fn syntax() {
+    // TODO: `unsafe impl` became syntactically invalid in https://github.com/rust-lang/rust/pull/144386#issuecomment-3133213586
     #[ext(E1)]
-    unsafe impl str {
+    impl str {
         fn normal(&self) {}
         unsafe fn unsafety(&self) {}
         extern "C" fn abi1() {}
@@ -351,7 +352,7 @@ fn syntax() {
     };
 
     struct S {}
-    unsafe impl E1 for S {
+    impl E1 for S {
         fn normal(&self) {}
         unsafe fn unsafety(&self) {}
         extern "C" fn abi1() {}
