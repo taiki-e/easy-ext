@@ -652,13 +652,13 @@ mod associated_type_bounds {
 
         // Implementations and types:
 
-        #[derive(Copy, Clone)]
+        #[derive(Clone, Copy)]
         pub struct BetaType;
 
-        #[derive(Copy, Clone)]
+        #[derive(Clone, Copy)]
         pub struct GammaType;
 
-        #[derive(Copy, Clone)]
+        #[derive(Clone, Copy)]
         pub struct ZetaType;
 
         impl Beta for BetaType {
