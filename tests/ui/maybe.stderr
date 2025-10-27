@@ -4,7 +4,7 @@ error: this relaxed bound is not permitted here
 34 |     Self: ?Sized,
    |           ^^^^^^
    |
-   = note: in this context, relaxed bounds are only allowed on type parameters defined by the closest item
+   = note: in this context, relaxed bounds are only allowed on type parameters defined on the closest item
 
 error: this relaxed bound is not permitted here
   --> tests/ui/maybe.rs:45:11
@@ -12,7 +12,7 @@ error: this relaxed bound is not permitted here
 45 |     Self: ?Sized,
    |           ^^^^^^
    |
-   = note: in this context, relaxed bounds are only allowed on type parameters defined by the closest item
+   = note: in this context, relaxed bounds are only allowed on type parameters defined on the closest item
 
 error: this relaxed bound is not permitted here
   --> tests/ui/maybe.rs:75:12
@@ -20,7 +20,7 @@ error: this relaxed bound is not permitted here
 75 |         T: ?Sized,
    |            ^^^^^^
    |
-   = note: in this context, relaxed bounds are only allowed on type parameters defined by the closest item
+   = note: in this context, relaxed bounds are only allowed on type parameters defined on the closest item
 
 error: this relaxed bound is not permitted here
   --> tests/ui/maybe.rs:24:11
@@ -28,4 +28,4 @@ error: this relaxed bound is not permitted here
 24 |     Self: ?Sized,
    |           ^^^^^^
    |
-   = note: in this context, relaxed bounds are only allowed on type parameters defined by the closest item
+   = note: in this context, relaxed bounds are only allowed on type parameters defined on the closest item
