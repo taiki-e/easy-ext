@@ -462,7 +462,8 @@ fn trait_from_impl(item: &mut ItemImpl, trait_name: Ident) -> Result<ItemTrait> 
     })?;
 
     let mut attrs = item.attrs.clone();
-    find_remove(&mut item.attrs, AttributeKind::Doc); // https://github.com/taiki-e/easy-ext/issues/20
+    find_remove(&mut item.attrs, AttributeKind::TraitOnly);
+    find_remove(&mut attrs, AttributeKind::ImplOnly);
     attrs.push(Attribute::new(vec![
         TokenTree::Ident(Ident::new("allow", Span::call_site())),
         TokenTree::Group(Group::new(
@@ -527,8 +528,9 @@ fn trait_item_from_impl_item(
             let vis = mem::replace(&mut impl_const.vis, Visibility::Inherited);
             check_visibility(vis, prev_vis, impl_vis, &impl_const.ident)?;
 
-            let attrs = impl_const.attrs.clone();
-            find_remove(&mut impl_const.attrs, AttributeKind::Doc); // https://github.com/taiki-e/easy-ext/issues/20
+            let mut attrs = impl_const.attrs.clone();
+            find_remove(&mut impl_const.attrs, AttributeKind::TraitOnly);
+            find_remove(&mut attrs, AttributeKind::ImplOnly);
             Ok(TraitItem::Const(TraitItemConst {
                 attrs,
                 const_token: impl_const.const_token.clone(),
@@ -542,8 +544,9 @@ fn trait_item_from_impl_item(
             let vis = mem::replace(&mut impl_type.vis, Visibility::Inherited);
             check_visibility(vis, prev_vis, impl_vis, &impl_type.ident)?;
 
-            let attrs = impl_type.attrs.clone();
-            find_remove(&mut impl_type.attrs, AttributeKind::Doc); // https://github.com/taiki-e/easy-ext/issues/20
+            let mut attrs = impl_type.attrs.clone();
+            find_remove(&mut impl_type.attrs, AttributeKind::TraitOnly);
+            find_remove(&mut attrs, AttributeKind::ImplOnly);
             Ok(TraitItem::Type(TraitItemType {
                 attrs,
                 type_token: impl_type.type_token.clone(),
@@ -557,8 +560,8 @@ fn trait_item_from_impl_item(
             check_visibility(vis, prev_vis, impl_vis, &impl_method.sig.ident)?;
 
             let mut attrs = impl_method.attrs.clone();
-            find_remove(&mut impl_method.attrs, AttributeKind::Doc); // https://github.com/taiki-e/easy-ext/issues/20
-            find_remove(&mut attrs, AttributeKind::Inline); // `#[inline]` is ignored on function prototypes
+            find_remove(&mut impl_method.attrs, AttributeKind::TraitOnly);
+            find_remove(&mut attrs, AttributeKind::ImplOnly);
             Ok(TraitItem::Method(TraitItemMethod {
                 attrs,
                 sig: {
