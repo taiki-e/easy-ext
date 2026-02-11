@@ -197,7 +197,7 @@ use std::{collections::hash_map::DefaultHasher, hash::Hasher, iter::FromIterator
 
 use proc_macro::{Delimiter, Group, Ident, Punct, Spacing, Span, TokenStream, TokenTree};
 
-use crate::{
+use self::{
     ast::{
         Attribute, AttributeKind, FnArg, GenericParam, Generics, ImplItem, ItemImpl, ItemTrait,
         PredicateType, Signature, TraitItem, TraitItemConst, TraitItemMethod, TraitItemType,
