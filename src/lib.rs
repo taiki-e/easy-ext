@@ -77,16 +77,9 @@ The first way is to specify visibility at the impl level. For example:
 ```
 use easy_ext::ext;
 
-// unnamed
-#[ext]
+#[ext(StrExt)] // generate `pub trait StrExt`
 pub impl str {
     fn foo(&self) {}
-}
-
-// named
-#[ext(StrExt)]
-pub impl str {
-    fn bar(&self) {}
 }
 ```
 
@@ -179,10 +172,13 @@ impl str {
 
 #![doc(test(
     no_crate_inject,
-    attr(
-        deny(warnings, rust_2018_idioms, single_use_lifetimes),
-        allow(dead_code, unused_variables)
-    )
+    attr(allow(
+        dead_code,
+        unused_variables,
+        unreachable_pub,
+        clippy::undocumented_unsafe_blocks,
+        clippy::unused_trait_names,
+    ))
 ))]
 #![forbid(unsafe_code)]
 

@@ -80,16 +80,9 @@ The first way is to specify visibility at the impl level. For example:
 ```rust
 use easy_ext::ext;
 
-// unnamed
-#[ext]
+#[ext(StrExt)] // generate `pub trait StrExt`
 pub impl str {
     fn foo(&self) {}
-}
-
-// named
-#[ext(StrExt)]
-pub impl str {
-    fn bar(&self) {}
 }
 ```
 
