@@ -12,6 +12,8 @@ Note: In this file, do not use the hard wrap in the middle of a sentence for com
 
 ## [Unreleased]
 
+- Enable [release immutability](https://docs.github.com/en/code-security/supply-chain-security/understanding-your-software-supply-chain/immutable-releases).
+
 ## [1.0.2] - 2024-05-30
 
 - Fix error with arbitrary self types. ([#42](https://github.com/taiki-e/easy-ext/pull/42), thanks @mbazero)
