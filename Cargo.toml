@@ -1,6 +1,6 @@
 [package]
 name = "easy-ext"
-version = "1.0.2" #publish:version
+version = "1.0.3" #publish:version
 edition = "2018"
 # NB: Sync with msrv badge in README.md
 rust-version = "1.31"
