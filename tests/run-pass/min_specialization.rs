@@ -2,8 +2,6 @@
 
 #![feature(min_specialization)]
 
-// See also run-pass/specialization.rs.
-
 // https://github.com/rust-lang/rust/blob/1.84.0/tests/ui/specialization/min_specialization/implcit-well-formed-bounds.rs
 pub mod implicit_well_formed_bounds {
     use easy_ext::ext;

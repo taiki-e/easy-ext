@@ -1,9 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0 OR MIT
 
-#![feature(const_trait_impl)]
-
 /*
 TODO: update for https://github.com/rust-lang/rust/pull/100982
+#![feature(const_trait_impl)]
 
 // https://github.com/rust-lang/rust/issues/67792
 // https://github.com/rust-lang/rust/blob/1.63.0/src/test/ui/rfc-2632-const-trait-impl/call-const-trait-method-pass.rs
