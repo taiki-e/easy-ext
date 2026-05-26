@@ -12,36 +12,15 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:
 
-env:
-  CARGO_INCREMENTAL: 0
-  CARGO_NET_GIT_FETCH_WITH_CLI: true
-  CARGO_NET_RETRY: 10
-  CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
-  RUSTDOCFLAGS: -D warnings
-  RUSTFLAGS: -D warnings
-  RUSTUP_MAX_RETRIES: 10
-
-defaults:
-  run:
-    shell: bash --noprofile --norc -CeEuxo pipefail {0}
-
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
 jobs:
-  miri:
-    uses: taiki-e/github-actions/.github/workflows/miri.yml@5f549ff6b21e9a853f5f613784d5db27746fd2bc # main
-  msrv:
-    uses: taiki-e/github-actions/.github/workflows/msrv.yml@5f549ff6b21e9a853f5f613784d5db27746fd2bc # main
-  test:
-    uses: taiki-e/github-actions/.github/workflows/test.yml@5f549ff6b21e9a853f5f613784d5db27746fd2bc # main
   tidy:
-    uses: taiki-e/github-actions/.github/workflows/tidy.yml@5f549ff6b21e9a853f5f613784d5db27746fd2bc # main
+    uses: taiki-e/github-actions/.github/workflows/tidy.yml@1bb80ca038216cd1fb7b6ca6d76240b3772963ab # main
     permissions:
-      contents: write # for creating branch for pr
-      pull-requests: write # unused (used in `codegen-automerge: true` case)
       security-events: write # for github/codeql-action/*
-    secrets:
-      PR_TOKEN_APP_PRIVATE_KEY: ${{ secrets.PR_TOKEN_APP_PRIVATE_KEY }}
+  test:
+    needs: tidy
+    uses: taiki-e/github-actions/.github/workflows/rust-test.yml@1bb80ca038216cd1fb7b6ca6d76240b3772963ab # main
