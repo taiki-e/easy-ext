@@ -140,11 +140,9 @@ pub(crate) struct Attribute {
 
 #[derive(Clone, Copy, PartialEq)]
 pub(crate) enum AttributeKind {
-    // #[doc ...]
-    Doc,
-    // #[inline ...]
-    Inline,
-    Other,
+    TraitOnly,
+    ImplOnly,
+    TraitAndImpl,
 }
 
 impl Attribute {
@@ -152,7 +150,7 @@ impl Attribute {
         Self {
             pound_token: Punct::new('#', Spacing::Alone),
             tokens: Group::new(Delimiter::Bracket, tokens.into_iter().collect()),
-            kind: AttributeKind::Other,
+            kind: AttributeKind::TraitAndImpl,
         }
     }
 }
@@ -311,7 +309,7 @@ pub(crate) struct TraitItemType {
 pub(crate) mod parsing {
     use std::iter::FromIterator;
 
-    use proc_macro::{Delimiter, Punct, Spacing, TokenStream, TokenTree};
+    use proc_macro::{Delimiter, Group, Punct, Spacing, TokenStream, TokenTree};
 
     use super::{
         Attribute, AttributeKind, BoundLifetimes, ConstParam, FnArg, GenericParam, Generics,
@@ -319,7 +317,11 @@ pub(crate) mod parsing {
         PredicateLifetime, PredicateType, Signature, TypeParam, TypeParamBound, Visibility,
         WhereClause, WherePredicate,
     };
-    use crate::{error::Result, iter::TokenIter, to_tokens::ToTokens};
+    use crate::{
+        error::{Error, Result},
+        iter::TokenIter,
+        to_tokens::ToTokens,
+    };
 
     fn parse_until_punct(input: &mut TokenIter, ch: char) -> Result<(Vec<TokenTree>, Punct)> {
         let mut buf = vec![];
@@ -388,27 +390,68 @@ pub(crate) mod parsing {
 
     fn parse_attrs(input: &mut TokenIter) -> Result<Vec<Attribute>> {
         let mut attrs = vec![];
+        let mut prev_kind_override: Option<(AttributeKind, Group)> = None;
         while input.peek_t(&'#') {
             let pound_token = input.parse_punct('#')?;
             let tokens = input.parse_group(Delimiter::Bracket)?;
-            let mut kind = AttributeKind::Other;
+            let mut kind = AttributeKind::TraitAndImpl;
+            let mut cur_kind_override = None;
             let mut iter = TokenIter::new(tokens.stream());
             if let Some(TokenTree::Ident(i)) = iter.next() {
                 match iter.next() {
                     // ignore #[path ...]
                     Some(TokenTree::Punct(ref p)) if p.as_char() == ':' => {}
-                    _ => match &*i.to_string() {
-                        "doc" => kind = AttributeKind::Doc,
-                        "inline" => kind = AttributeKind::Inline,
+                    next => match &*i.to_string() {
+                        "doc" => kind = AttributeKind::TraitOnly,
+                        "inline" => kind = AttributeKind::ImplOnly,
+                        "ext_attr" => {
+                            if let Some(next) = next {
+                                match &*next.to_string() {
+                                    "(impl_only)" => {
+                                        cur_kind_override = Some(AttributeKind::ImplOnly);
+                                    }
+                                    "(trait_only)" => {
+                                        cur_kind_override = Some(AttributeKind::TraitOnly);
+                                    }
+                                    _ => {
+                                        return Err(Error::new(
+                                            &tokens,
+                                            "invalid attribute tag".into(),
+                                        ))
+                                    }
+                                }
+                            } else {
+                                return Err(Error::new(&tokens, "missing attribute tag".into()));
+                            }
+                        }
                         _ => {}
                     },
                 }
             }
 
+            match (prev_kind_override.take(), cur_kind_override) {
+                (Some((prev_kind_override, _)), None) => {
+                    kind = prev_kind_override;
+                }
+                (None, Some(cur_kind_override)) => {
+                    prev_kind_override = Some((cur_kind_override, tokens));
+                    continue;
+                }
+                (Some(_), Some(_)) => {
+                    return Err(Error::new(&tokens, "repeated attribute tag".into()))
+                }
+                (None, None) => {}
+            }
+
             let attr = Attribute { pound_token, tokens, kind };
             attrs.push(attr);
         }
-        Ok(attrs)
+
+        if let Some((_, tokens)) = prev_kind_override {
+            Err(Error::new(&tokens, "unused attribute tag".into()))
+        } else {
+            Ok(attrs)
+        }
     }
 
     fn parse_generics(input: &mut TokenIter) -> Result<Generics> {
